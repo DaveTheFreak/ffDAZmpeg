@@ -752,6 +752,11 @@ int main(int, char**)
                 ImGui::InputText("ffmpeg location", save.settings.ffmpeg_path, IM_ARRAYSIZE(save.settings.ffmpeg_path));
                     ImGui::SetItemTooltip("File path to the executable, this program won't run without it.");
 
+                ImGui::Spacing();
+
+                ImGui::Checkbox("Enable ffmpeg Log", &save.settings.generate_ffmpeg_log);
+                    ImGui::SetItemTooltip("If enabled, will output the ffmpeg log to the output folder.");
+
                 // -----------------------------------------------------------------------------------------------------
                 ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 

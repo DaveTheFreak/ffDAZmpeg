@@ -45,6 +45,39 @@ struct ffmpeg_execution
 
     void Run(app_settings settings)
     {
+        std::thread([this, settings]()
+        {
+            std::string local_ffmpeg_path = std::string(settings.ffmpeg_path) + "\\ffmpeg.exe";
+
+            for (const auto& entry : std::filesystem::directory_iterator(settings.input_path))
+            {
+                if (entry.is_regular_file()
+                    && (entry.path().extension() == ".png" || entry.path().extension() == ".tiff"))
+                {
+                    current_filename = entry.path().filename().string();
+
+                    // Build the base command
+                    std::string command = "\"" + local_ffmpeg_path + "\" " + get_ffmpeg_arguments(settings);
+
+                    // Create the redirection string based on the setting
+                    std::string redirection = "";
+                    if (settings.generate_ffmpeg_log)
+                    {
+                        std::string log_file = std::string(settings.output_path) + "\\ffmpeg_log.txt";
+                        redirection = " 2>> \"" + log_file + "\"";
+                    }
+
+                    // Final string follows your original working quote pattern
+                    std::string finalCmd = "\"" + command + redirection + "\"";
+
+                    std::system(finalCmd.c_str());
+                }
+            }
+        }).detach();
+    }
+
+    void RunAlwaysFfmpegLog(app_settings settings)
+    {
         // Execute in a detached background thread to prevent the DearImGui app from freezing
         std::thread([this, settings]()
         {
