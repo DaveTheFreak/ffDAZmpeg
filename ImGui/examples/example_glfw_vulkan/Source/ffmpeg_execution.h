@@ -25,13 +25,17 @@ struct ffmpeg_execution
             std::filesystem::path(settings.output_path) / std::filesystem::path(current_filename).stem();
         output_file += ".avif";
 
+        // Encoder Settings --------------------------------------------------------------------------------------------
+
+        std::string encoding = R"(-c:v av1_nvenc -rc constqp -qp 8 -preset p7 -pix_fmt p010le)";
+
         // Effects -----------------------------------------------------------------------------------------------------
 
         // ...
 
         // Actual conversion -------------------------------------------------------------------------------------------
 
-        ffmpeg_command = "-y -i \"" + input_file.string() + "\" -c:v av1_nvenc \"" + output_file.string() + "\"";
+        ffmpeg_command = "-y -i \"" + input_file.string() + "\" " + encoding + " \"" + output_file.string() + "\"";
 
         // Return ------------------------------------------------------------------------------------------------------
         return ffmpeg_command.c_str();
@@ -43,7 +47,7 @@ struct ffmpeg_execution
 
         for (const auto& entry : std::filesystem::directory_iterator(settings.input_path))
         {
-            if (entry.is_regular_file() && entry.path().extension() == ".png")
+            if (entry.is_regular_file() && (entry.path().extension() == ".png" || entry.path().extension() == ".tiff"))
             {
                 current_filename = entry.path().filename().string();
 
