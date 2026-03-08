@@ -40,6 +40,9 @@ struct app_settings
     char ffmpeg_path[512] =
         R"(C:\)";
 
+    // Logs ------------------------------------------------------------------------------------------------------------
+    bool generate_ffmpeg_log {true};
+
 };
 
 struct save_system

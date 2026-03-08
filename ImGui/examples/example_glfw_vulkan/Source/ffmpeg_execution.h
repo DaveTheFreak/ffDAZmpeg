@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <thread>
+
 #include "save_system.h"
 
 /** This creates the actual command(s) for ffmpeg. */
@@ -43,22 +45,30 @@ struct ffmpeg_execution
 
     void Run(app_settings settings)
     {
-        ffmpeg_path = std::string(settings.ffmpeg_path) + "\\ffmpeg.exe";
-
-        for (const auto& entry : std::filesystem::directory_iterator(settings.input_path))
+        // Execute in a detached background thread to prevent the DearImGui app from freezing
+        std::thread([this, settings]()
         {
-            if (entry.is_regular_file() && (entry.path().extension() == ".png" || entry.path().extension() == ".tiff"))
+            std::string local_ffmpeg_path = std::string(settings.ffmpeg_path) + "\\ffmpeg.exe";
+
+            for (const auto& entry : std::filesystem::directory_iterator(settings.input_path))
             {
-                current_filename = entry.path().filename().string();
+                if (entry.is_regular_file()
+                    && (entry.path().extension() == ".png" || entry.path().extension() == ".tiff"))
+                {
+                    current_filename = entry.path().filename().string();
 
-                std::string command = "\"" + ffmpeg_path + "\" " + get_ffmpeg_arguments(settings);
+                    std::string command = "\"" + local_ffmpeg_path + "\" " + get_ffmpeg_arguments(settings);
 
-                // Added /wait to prevent launching all instances simultaneously and overloading the NVENC encoder.
-                std::string finalCmd = "start \"ffmpeg_test\" /wait " + command;
+                    std::string log_file = std::string(settings.output_path) + "\\ffmpeg_log.txt";
 
-                std::system(finalCmd.c_str());
+                    // Wrap the entire command in an extra set of quotes for cmd.exe parsing.
+                    // Use 2>> to append logs for all files in the batch.
+                    std::string finalCmd = "\"" + command + " 2>> \"" + log_file + "\"\"";
+
+                    std::system(finalCmd.c_str());
+                }
             }
-        }
+        }).detach();
     }
 
 #pragma endregion
