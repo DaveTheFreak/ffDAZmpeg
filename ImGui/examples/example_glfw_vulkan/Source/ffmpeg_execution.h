@@ -3,6 +3,9 @@
 #pragma once
 
 #include <thread>
+#include <cstdio>
+#include <string>
+#include <filesystem>
 
 #include "save_system.h"
 
@@ -100,6 +103,39 @@ struct ffmpeg_execution
             default: break;
         }
 
+        // Image Enhancement -------------------------------------------------------------------------------------------
+
+        std::string dither_param;
+
+        if (settings.enable_image_enhancement)
+        {
+            dither_param = "-sws_dither ed ";
+
+            int img_width = 1920;
+            std::string ffprobe_path = std::string(settings.ffmpeg_path) + "\\ffprobe.exe";
+            std::string probe_cmd =
+                "\"\"" + ffprobe_path
+            +   "\" -v error -select_streams v:0 -show_entries stream=width -of default=nw=1:nk=1 \""
+            +   input_file.string() + "\"\"";
+
+            FILE* pipe = _popen(probe_cmd.c_str(), "rt");
+            if (pipe)
+            {
+                char buffer[128];
+                if (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+                {
+                    try { img_width = std::stoi(buffer); } catch (...) {}
+                }
+                _pclose(pipe);
+            }
+
+            int deband_range = img_width / 960;
+            if (deband_range < 1) deband_range = 1;
+
+            filter_chain += ",deband=1thr=0.01:2thr=0.01:3thr=0.01:range=" + std::to_string(deband_range);
+            filter_chain += ",noise=c0s=1:c0f=u";
+        }
+
         // Actual conversion -------------------------------------------------------------------------------------------
 
         ffmpeg_command = "-y -i \""
@@ -107,6 +143,7 @@ struct ffmpeg_execution
         +   logo_input + " "
         +   "-filter_complex \"" + filter_chain + "\" "
         +   encoding + " "
+        +   dither_param
         +   dynamic_range_params + " \""
         +   output_file.string() + "\"";
 
