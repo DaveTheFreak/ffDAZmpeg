@@ -666,7 +666,7 @@ int main(int, char**)
 
                 ImGui::InputText("Logo File Path", save.settings.logo_path, IM_ARRAYSIZE(save.settings.logo_path));
                     ImGui::SetItemTooltip(
-                        "Logo must be \".png\" with alpha-channel.\nFile must have same aspect ratio as final image.\nLogo must be scaled and placed correctly.");
+                        "Leave empty for no logo.\nLogo must be \".png\" with alpha-channel.\nFile must have same aspect ratio as final image.\nLogo must be scaled and placed correctly.");
 
                 // -----------------------------------------------------------------------------------------------------
                 ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
