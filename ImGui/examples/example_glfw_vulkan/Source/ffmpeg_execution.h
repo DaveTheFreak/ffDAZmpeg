@@ -19,12 +19,12 @@ struct ffmpeg_execution
     {
         ffmpeg_command.clear();
 
-        // Input format (.png or .tiff) --------------------------------------------------------------------------------
+        // Input format (.png or .tif) --------------------------------------------------------------------------------
 
         std::filesystem::path input_file =
             std::filesystem::path(settings.input_path) / current_filename;
 
-        // Output format (.png or .tiff) -------------------------------------------------------------------------------
+        // Output format (.png or .tif) -------------------------------------------------------------------------------
 
         std::filesystem::path output_file =
             std::filesystem::path(settings.output_path) / std::filesystem::path(current_filename).stem();
@@ -254,7 +254,7 @@ struct ffmpeg_execution
             for (const auto& entry : std::filesystem::directory_iterator(settings.input_path))
             {
                 if (entry.is_regular_file()
-                    && (entry.path().extension() == ".png" || entry.path().extension() == ".tiff"))
+                    && (entry.path().extension() == ".png" || entry.path().extension() == ".tif"))
                 {
                     current_filename = entry.path().filename().string();
 
