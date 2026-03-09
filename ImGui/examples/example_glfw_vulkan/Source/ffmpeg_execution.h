@@ -34,11 +34,16 @@ struct ffmpeg_execution
 
         std::string chromatic_aberration_intensity = std::to_string(settings.chromatic_aberration);
 
-        std::string ca_logic = "[0:v]zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=gbrp16le,extractplanes=r+g+b[r][g][b];";
-        ca_logic += "[r]lenscorrection=k1=" + chromatic_aberration_intensity + ":k2=0[r_dist];";
-        ca_logic += "[b]lenscorrection=k1=-" + chromatic_aberration_intensity + ":k2=0[b_dist];";
-        ca_logic += "[g][b_dist][r_dist]mergeplanes=format=gbrp16le:map0s=0:map0p=0:map1s=1:map1p=0:map2s=2:map2p=0,";
-        ca_logic += "zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,crop=iw*0.995:ih*0.995,format=rgba64le";
+        std::string ca_logic =
+            "[0:v]zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=gbrp16le,extractplanes=r+g+b[r][g][b];";
+        ca_logic +=
+            "[r]lenscorrection=k1=" + chromatic_aberration_intensity + ":k2=0[r_dist];";
+        ca_logic +=
+            "[b]lenscorrection=k1=-" + chromatic_aberration_intensity + ":k2=0[b_dist];";
+        ca_logic +=
+            "[g][b_dist][r_dist]mergeplanes=format=gbrp16le:map0s=0:map0p=0:map1s=1:map1p=0:map2s=2:map2p=0,";
+        ca_logic +=
+            "zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,crop=iw*0.995:ih*0.995,format=rgba64le";
 
         // Logo Overlay
         std::string filter_chain;
@@ -75,16 +80,22 @@ struct ffmpeg_execution
 
                 if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
                 {
-                    dynamic_range_params = "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
+                    dynamic_range_params =
+                        "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
                 }
                 else // HDR
                 {
-                    filter_chain += ",format=gbrp16le,curves=all='0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1',";
-                    filter_chain += "colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,";
-                    filter_chain += "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
+                    filter_chain +=
+                        ",format=gbrp16le,curves=all='0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1',";
+                    filter_chain +=
+                        "colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,";
+                    filter_chain +=
+                        "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
 
-                    dynamic_range_params = "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
-                    dynamic_range_params += "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
+                    dynamic_range_params =
+                        "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
+                    dynamic_range_params +=
+                        "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
                 }
                 break;
             }
