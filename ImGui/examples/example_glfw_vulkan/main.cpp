@@ -563,13 +563,13 @@ int main(int, char**)
                 ImGui::Spacing();
 
                 // Paths - Input & Output ------------------------------------------------------------------------------
-                ImGui::Text(R"(Images must be in ".png" or ".tiff" format.)");
+                ImGui::Text(R"(Images must be in ".png" or ".tif" format.)");
 
                 // -----------------------------------------------------------------------------------------------------
                 ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
                 ImGui::InputText("Daz Image(s) Input Path", save.settings.input_path, IM_ARRAYSIZE(save.settings.input_path));
-                    ImGui::SetItemTooltip(R"(Folder where the ".png" or ".tiff" files from Daz are.)");
+                    ImGui::SetItemTooltip(R"(Folder where the ".png" or ".tif" files from Daz are.)");
                 ImGui::Spacing();
                 ImGui::InputText("Daz Image(s) Output Path", save.settings.output_path, IM_ARRAYSIZE(save.settings.output_path));
                     ImGui::SetItemTooltip("Save folder for converted files.");

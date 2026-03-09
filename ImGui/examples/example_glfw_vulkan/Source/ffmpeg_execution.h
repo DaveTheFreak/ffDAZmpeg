@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <string>
 #include <filesystem>
+#include <windows.h>
 
 #include "save_system.h"
 
@@ -194,26 +195,60 @@ struct ffmpeg_execution
 
         std::string dither_param;
 
-        if (settings.enable_image_enhancement)
+if (settings.enable_image_enhancement)
         {
             dither_param = "-sws_dither ed ";
 
             int img_width = 1920;
             std::string ffprobe_path = std::string(settings.ffmpeg_path) + "\\ffprobe.exe";
-            std::string probe_cmd =
-                "\"\"" + ffprobe_path
-            +   "\" -v error -select_streams v:0 -show_entries stream=width -of default=nw=1:nk=1 \""
-            +   input_file.string() + "\"\"";
 
-            FILE* pipe = _popen(probe_cmd.c_str(), "rt");
-            if (pipe)
+            // Execute ffprobe directly without cmd.exe
+            std::string probe_cmd = "\"" + ffprobe_path + "\" -v error -select_streams v:0 -show_entries stream=width -of default=nw=1:nk=1 \"" + input_file.string() + "\"";
+
+            // CreateProcessA requires a mutable buffer
+            std::vector<char> probeCmdBuf(probe_cmd.begin(), probe_cmd.end());
+            probeCmdBuf.push_back('\0');
+
+            HANDLE hReadPipe, hWritePipe;
+            SECURITY_ATTRIBUTES sa_pipe = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+
+            if (CreatePipe(&hReadPipe, &hWritePipe, &sa_pipe, 0))
             {
-                char buffer[128];
-                if (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+                STARTUPINFOA si_probe;
+                PROCESS_INFORMATION pi_probe;
+                ZeroMemory(&si_probe, sizeof(si_probe));
+                si_probe.cb = sizeof(si_probe);
+                si_probe.dwFlags = STARTF_USESTDHANDLES;
+                si_probe.hStdOutput = hWritePipe;
+                si_probe.hStdError = hWritePipe;
+                ZeroMemory(&pi_probe, sizeof(pi_probe));
+
+                if (CreateProcessA(NULL, probeCmdBuf.data(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si_probe, &pi_probe))
                 {
-                    try { img_width = std::stoi(buffer); } catch (...) {}
+                    // Parent MUST close its copy of the write pipe immediately to prevent deadlock
+                    CloseHandle(hWritePipe);
+
+                    char buffer[128];
+                    DWORD bytesRead;
+                    std::string output;
+
+                    while (ReadFile(hReadPipe, buffer, sizeof(buffer) - 1, &bytesRead, NULL) && bytesRead > 0)
+                    {
+                        buffer[bytesRead] = '\0';
+                        output += buffer;
+                    }
+
+                    WaitForSingleObject(pi_probe.hProcess, INFINITE);
+                    CloseHandle(pi_probe.hProcess);
+                    CloseHandle(pi_probe.hThread);
+
+                    try { img_width = std::stoi(output); } catch (...) {}
                 }
-                _pclose(pipe);
+                else
+                {
+                    CloseHandle(hWritePipe);
+                }
+                CloseHandle(hReadPipe);
             }
 
             int deband_range = img_width / 960;
@@ -245,7 +280,7 @@ struct ffmpeg_execution
     }
 
     /** Run the conversions. */
-    void Run(app_settings settings)
+void Run(app_settings settings)
     {
         std::thread([this, settings]()
         {
@@ -259,22 +294,42 @@ struct ffmpeg_execution
                     current_filename = entry.path().filename().string();
 
                     // Build the base command
-                    std::string command = "\"" + local_ffmpeg_path + "\" "
-                    +   get_ffmpeg_arguments(settings);
+                    std::string command = "\"" + local_ffmpeg_path + "\" " + get_ffmpeg_arguments(settings);
 
-                    // Create the redirection string based on the setting
-                    std::string redirection = "";
+                    // CreateProcessA requires a mutable buffer
+                    std::vector<char> cmdBuf(command.begin(), command.end());
+                    cmdBuf.push_back('\0');
+
+                    SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
+                    HANDLE hLogFile = NULL;
+
                     if (settings.generate_ffmpeg_log)
                     {
                         std::string log_file = std::string(settings.output_path) + "\\ffmpeg_log.txt";
-                        redirection = " 2>> \"" + log_file + "\"";
+                        hLogFile = CreateFileA(log_file.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, &sa, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
                     }
 
-                    // Finish the command
-                    std::string finalCmd = "\"" + command + redirection + "\"";
+                    STARTUPINFOA si;
+                    PROCESS_INFORMATION pi;
+                    ZeroMemory(&si, sizeof(si));
+                    si.cb = sizeof(si);
 
-                    // Execute command (open ffmpeg with command)
-                    std::system(finalCmd.c_str());
+                    if (hLogFile)
+                    {
+                        si.dwFlags |= STARTF_USESTDHANDLES;
+                        si.hStdError = hLogFile; // ffmpeg outputs logs to stderr
+                        si.hStdOutput = hLogFile;
+                    }
+
+                    // Execute directly without cmd.exe to guarantee no window
+                    if (CreateProcessA(NULL, cmdBuf.data(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi))
+                    {
+                        WaitForSingleObject(pi.hProcess, INFINITE);
+                        CloseHandle(pi.hProcess);
+                        CloseHandle(pi.hThread);
+                    }
+
+                    if (hLogFile) CloseHandle(hLogFile);
                 }
             }
         }).detach();
