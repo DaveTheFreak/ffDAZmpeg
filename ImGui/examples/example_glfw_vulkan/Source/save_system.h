@@ -5,7 +5,6 @@
 #include <windows.h>
 #include <filesystem>
 #include <fstream>
-#include <map>
 #include <string>
 
 struct app_settings
@@ -36,7 +35,7 @@ struct app_settings
     // Encoder ---------------------------------------------------------------------------------------------------------
 
     /** "Vendor Specific", "Software", "Vulkan" */
-    int8_t selected_encoder_option = 0;
+    int8_t selected_encoder_option = 2;
 
     // Settings --------------------------------------------------------------------------------------------------------
     char ffmpeg_path[512] =
@@ -91,9 +90,6 @@ public:
 
     /** Current App settings. */
     app_settings settings;
-
-    // TODO profiles
-    std::map<std::string, app_settings> profiles;
 
 };
 

@@ -25,6 +25,8 @@
 
 #include "Source/ffmpeg_execution.h"
 #include "Source/save_system.h"
+#include "Source/Values/global_values.h"
+#include "Source/Windows/window_settings.h"
 
 // Volk headers
 #ifdef IMGUI_IMPL_VULKAN_USE_VOLK
@@ -493,7 +495,13 @@ int main(int, char**)
     save.load_settings();
 
     /** Init ffmpeg execution struct. */
-    ffmpeg_execution* ffmpeg = new(ffmpeg_execution);
+    ffmpeg_execution* ffmpeg_execution_ptr = new(ffmpeg_execution);
+
+    /** Init global values. */
+    global_values* global_values_ptr = new global_values();
+
+    /** Window Settings */
+    window_settings* window_settings_ptr = new window_settings();
 
 #pragma endregion
 
@@ -590,7 +598,9 @@ int main(int, char**)
                             ImGui::SetItemDefaultFocus();
                     }
                     ImGui::EndCombo();
-                }
+                }   ImGui::SetItemTooltip("Currently only AVIF is being supported.");
+
+                save.settings.selected_image_format = 0; // TODO: currently only AVIF supported!
 
                 ImGui::Spacing();
 
@@ -730,12 +740,12 @@ int main(int, char**)
                 static float progress_bar_progress {0.0f};
                 if (ImGui::Button("START CONVERSION"))
                 {
-                    ffmpeg->Run(save.settings);
+                    ffmpeg_execution_ptr->Run(save.settings);
                 }   ImGui::SetItemTooltip("Start converting the images.");
 
                 // Progress Bar ----------------------------------------------------------------------------------------
                 ImGui::SameLine();
-                ImGui::ProgressBar(progress_bar_progress);
+                ImGui::ProgressBar(global_values_ptr->current_conversion_progression);
 
                 // -----------------------------------------------------------------------------------------------------
                 ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
@@ -833,7 +843,6 @@ int main(int, char**)
             FrameRender(wd, draw_data);
             FramePresent(wd);
         }
-
     }
 
 #pragma endregion
@@ -841,7 +850,9 @@ int main(int, char**)
 // Cleanup -------------------------------------------------------------------------------------------------------------
 #pragma region Cleanup
 
-    delete ffmpeg;
+    delete ffmpeg_execution_ptr;
+    delete global_values_ptr;
+    delete window_settings_ptr;
 
     // Cleanup
     err = vkDeviceWaitIdle(g_Device);

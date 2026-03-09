@@ -182,6 +182,8 @@
     <ClInclude Include="..\..\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="Source\ffmpeg_execution.h" />
     <ClInclude Include="Source\save_system.h" />
+    <ClInclude Include="Source\Values\global_values.h" />
+    <ClInclude Include="Source\Windows\window_settings.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\misc\debuggers\imgui.natstepfilter" />

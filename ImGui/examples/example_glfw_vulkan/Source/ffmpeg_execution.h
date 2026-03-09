@@ -28,7 +28,15 @@ struct ffmpeg_execution
 
         std::filesystem::path output_file =
             std::filesystem::path(settings.output_path) / std::filesystem::path(current_filename).stem();
-        output_file += ".avif";
+
+        switch (settings.selected_image_format)
+        {
+            case 0: output_file += ".avif"; break;
+            case 1: output_file += ".heic"; break;
+            case 2: output_file += ".jxl"; break;
+            case 3: output_file += ".jpg"; break;
+            default: break;
+        }
 
         // Effects -----------------------------------------------------------------------------------------------------
 
@@ -49,7 +57,9 @@ struct ffmpeg_execution
         std::string filter_chain;
         std::string logo_input;
 
-        if (settings.logo_path[0] != '\0' && std::filesystem::exists(settings.logo_path) && std::filesystem::is_regular_file(settings.logo_path))
+        if (settings.logo_path[0] != '\0'
+            && std::filesystem::exists(settings.logo_path)
+            && std::filesystem::is_regular_file(settings.logo_path))
         {
             logo_input = " -i \"" + std::string(settings.logo_path) + "\"";
 
@@ -70,32 +80,98 @@ struct ffmpeg_execution
 
         std::string encoding;
         std::string dynamic_range_params;
+        std::string hw_upload;
+        std::string hw_init;
+        std::string hdr_curve {"0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1"};
+        std::string hdr_desaturation {"colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,"};
 
         switch (settings.selected_image_format)
         {
             case 0: // AVIF
             {
-                std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "yuv420p" : "p010le";
-                encoding = "-c:v av1_nvenc -rc constqp -qp 8 -preset p7 -pix_fmt " + pix_fmt;
-
-                if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
+                switch (settings.selected_encoder_option)
                 {
-                    dynamic_range_params =
-                        "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
-                }
-                else // HDR
-                {
-                    filter_chain +=
-                        ",format=gbrp16le,curves=all='0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1',";
-                    filter_chain +=
-                        "colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,";
-                    filter_chain +=
-                        "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
+                    case 0: // NVENC
+                    {
+                        std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "yuv420p" : "p010le";
+                        encoding = "-c:v av1_nvenc -rc constqp -qp 8 -preset p7 -pix_fmt " + pix_fmt;
 
-                    dynamic_range_params =
-                        "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
-                    dynamic_range_params +=
-                        "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
+                        if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
+                        {
+                            dynamic_range_params =
+                                "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
+                        }
+                        else // HDR
+                        {
+                            filter_chain +=
+                                ",format=gbrp16le,curves=all='" + hdr_curve + "',";
+                            filter_chain += hdr_desaturation;
+                            filter_chain +=
+                                "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
+
+                            dynamic_range_params =
+                                "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
+                            dynamic_range_params +=
+                                "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
+                        }
+                        break;
+                    }
+                    case 1: // SOFTWARE
+                    {
+                        // Software encoders typically expect standard planar formats rather than hardware semi-planar formats.
+                        std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "yuv420p" : "yuv420p10le";
+                        encoding = "-c:v libsvtav1 -preset 6 -crf 20 -pix_fmt " + pix_fmt;
+
+                        if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
+                        {
+                            dynamic_range_params =
+                                "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
+                        }
+                        else // HDR
+                        {
+                            filter_chain +=
+                                ",format=gbrp16le,curves=all='" + hdr_curve + "',";
+                            filter_chain += hdr_desaturation;
+                            filter_chain +=
+                                "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
+
+                            dynamic_range_params =
+                                "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
+                            dynamic_range_params +=
+                                "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
+                        }
+                        break;
+                    }
+                    case 2: // VULKAN
+                    {
+                        std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "nv12" : "p010le";
+
+                        hw_init = "-init_hw_device vulkan=vk -filter_hw_device vk ";
+                        hw_upload = ",format=" + pix_fmt + ",hwupload";
+
+                        encoding = "-c:v av1_vulkan -qp 8";
+
+                        if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
+                        {
+                            dynamic_range_params =
+                                "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
+                        }
+                        else // HDR
+                        {
+                            filter_chain +=
+                                ",format=gbrp16le,curves=all='" + hdr_curve + "',";
+                            filter_chain += hdr_desaturation;
+                            filter_chain +=
+                                "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
+
+                            dynamic_range_params =
+                                "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
+                            dynamic_range_params +=
+                                "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
+                        }
+                        break;
+                    }
+                    default: break;
                 }
                 break;
             }
@@ -147,9 +223,15 @@ struct ffmpeg_execution
             filter_chain += ",noise=c0s=1:c0f=u";
         }
 
-        // Actual conversion -------------------------------------------------------------------------------------------
+        // Vulkan renderer post steps ----------------------------------------------------------------------------------
 
-        ffmpeg_command = "-y -i \""
+        filter_chain += hw_upload;
+
+        // Create final command ----------------------------------------------------------------------------------------
+
+        ffmpeg_command =
+            hw_init
+        +   "-y -i \""
         +   input_file.string() + "\" "
         +   logo_input + " "
         +   "-filter_complex \"" + filter_chain + "\" "
@@ -162,6 +244,7 @@ struct ffmpeg_execution
         return ffmpeg_command.c_str();
     }
 
+    /** Run the conversions. */
     void Run(app_settings settings)
     {
         std::thread([this, settings]()
@@ -176,7 +259,8 @@ struct ffmpeg_execution
                     current_filename = entry.path().filename().string();
 
                     // Build the base command
-                    std::string command = "\"" + local_ffmpeg_path + "\" " + get_ffmpeg_arguments(settings);
+                    std::string command = "\"" + local_ffmpeg_path + "\" "
+                    +   get_ffmpeg_arguments(settings);
 
                     // Create the redirection string based on the setting
                     std::string redirection = "";
@@ -186,9 +270,10 @@ struct ffmpeg_execution
                         redirection = " 2>> \"" + log_file + "\"";
                     }
 
-                    // Final string follows your original working quote pattern
+                    // Finish the command
                     std::string finalCmd = "\"" + command + redirection + "\"";
 
+                    // Execute command (open ffmpeg with command)
                     std::system(finalCmd.c_str());
                 }
             }
