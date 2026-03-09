@@ -29,41 +29,59 @@ struct ffmpeg_execution
 
         // Effects -----------------------------------------------------------------------------------------------------
 
-        std::string effects {""};
+        std::string chromatic_aberration_intensity = std::to_string(settings.chromatic_aberration);
+
+        std::string ca_logic = "[0:v]zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=gbrp16le,extractplanes=r+g+b[r][g][b];";
+        ca_logic += "[r]lenscorrection=k1=" + chromatic_aberration_intensity + ":k2=0[r_dist];";
+        ca_logic += "[b]lenscorrection=k1=-" + chromatic_aberration_intensity + ":k2=0[b_dist];";
+        ca_logic += "[g][b_dist][r_dist]mergeplanes=format=gbrp16le:map0s=0:map0p=0:map1s=1:map1p=0:map2s=2:map2p=0,";
+        ca_logic += "zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,crop=iw*0.995:ih*0.995,format=rgba64le";
+
+        // Logo Overlay
+        std::string filter_chain;
+        std::string logo_input;
+
+        if (settings.logo_path[0] != '\0' && std::filesystem::exists(settings.logo_path) && std::filesystem::is_regular_file(settings.logo_path))
+        {
+            logo_input = " -i \"" + std::string(settings.logo_path) + "\"";
+
+            ca_logic += "[v_ca];";
+            std::string logo_logic = "[v_ca]split=2[v_ca_main][v_ca_ref];";
+            logo_logic += "[1:v]format=rgba64le[v_logo_raw];";
+            logo_logic += "[v_logo_raw][v_ca_ref]scale=w=rw:h=rh[v_logo_scaled];";
+            logo_logic += "[v_ca_main][v_logo_scaled]overlay=format=auto";
+
+            filter_chain = ca_logic + logo_logic;
+        }
+        else
+        {
+            filter_chain = ca_logic; // Passes output directly without an output pad
+        }
 
         // Encoder Settings --------------------------------------------------------------------------------------------
 
         std::string encoding;
-        std::string dynamic_range;
+        std::string dynamic_range_params;
 
         switch (settings.selected_image_format)
         {
             case 0: // AVIF
             {
                 std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "yuv420p" : "p010le";
-
                 encoding = "-c:v av1_nvenc -rc constqp -qp 8 -preset p7 -pix_fmt " + pix_fmt;
 
-                if (settings.selected_bit_depth_index == 0) // 8 bit (supports only SDR)
+                if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
                 {
-                    dynamic_range = "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
+                    dynamic_range_params = "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
                 }
-                else // 10 bit
+                else // HDR
                 {
-                    if (settings.selected_dynamic_range == 0) // SDR
-                    {
-                        dynamic_range =
-                            "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
-                    }
-                    else // HDR
-                    {
-                        dynamic_range = "-vf \"format=gbrp16le,curves=all='0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1',";
-                        dynamic_range += "colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,";
-                        dynamic_range += "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000\" ";
+                    filter_chain += ",format=gbrp16le,curves=all='0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1',";
+                    filter_chain += "colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,";
+                    filter_chain += "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
 
-                        dynamic_range += "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
-                        dynamic_range += "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
-                    }
+                    dynamic_range_params = "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
+                    dynamic_range_params += "-bsf:v av1_metadata=chroma_sample_position=1:color_range=1:color_primaries=9:transfer_characteristics=16:matrix_coefficients=9";
                 }
                 break;
             }
@@ -86,8 +104,10 @@ struct ffmpeg_execution
 
         ffmpeg_command = "-y -i \""
         +   input_file.string() + "\" "
+        +   logo_input + " "
+        +   "-filter_complex \"" + filter_chain + "\" "
         +   encoding + " "
-        +   dynamic_range + " \""
+        +   dynamic_range_params + " \""
         +   output_file.string() + "\"";
 
         // Return ------------------------------------------------------------------------------------------------------
