@@ -7,8 +7,10 @@ It can save 8 or 10 bit images, either SDR Rec709 or HDR PQ.
 # Current Features
 
 - a simple UI
-- a .png can be converted to .avif (dummy functionality) without any parameters being applied
-- settings can be saved
+- .png and .tif files can be converted to avif using nvenc, vulkan or software
+- 8 & 10 bit SDR & 10 bit HDR images suppored as export
+- image enhancement, chromatic aberration and logo effects
+- saveable settings
 
 # Third Party Libraries
 
