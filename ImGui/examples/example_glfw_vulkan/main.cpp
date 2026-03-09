@@ -21,6 +21,7 @@
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <string>
+#include <windows.h>
 #include <GLFW/glfw3.h>
 
 #include "Source/ffmpeg_execution.h"
@@ -364,6 +365,9 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd)
 
 int main(int, char**)
 {
+
+    FreeConsole();
+
 // Override main windows-window ----------------------------------------------------------------------------------------
 #pragma region OverrideMainWindowsWindow
 
