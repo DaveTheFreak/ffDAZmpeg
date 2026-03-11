@@ -1,18 +1,5 @@
 // Dear ImGui: standalone example application for Glfw + Vulkan
 
-// Learn about Dear ImGui:
-// - FAQ                  https://dearimgui.com/faq
-// - Getting Started      https://dearimgui.com/getting-started
-// - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
-// - Introduction, links and more at the top of imgui.cpp
-
-// Important note to the reader who wish to integrate imgui_impl_vulkan.cpp/.h in their own engine/app.
-// - Common ImGui_ImplVulkan_XXX functions and structures are used to interface with imgui_impl_vulkan.cpp/.h.
-//   You will use those if you want to use this rendering backend in your engine/app.
-// - Helper ImGui_ImplVulkanH_XXX functions and structures are only used by this example (main.cpp) and by
-//   the backend itself (imgui_impl_vulkan.cpp), but should PROBABLY NOT be used by your own engine/app code.
-// Read comments in imgui_impl_vulkan.h.
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
@@ -25,9 +12,14 @@
 #include <GLFW/glfw3.h>
 
 #include "Source/ffmpeg_execution.h"
-#include "Source/save_system.h"
-#include "Source/Values/global_values.h"
-#include "Source/Windows/window_settings.h"
+#include "Source/Manager/LManager.h"
+#include "Source/Manager/LSaveSystem.h"
+#include "Source/Types/Structs/FRuntimeValues.h"
+#include "Source/Types/Structs/FSavedValues.h"
+#include "Source/Windows/WSettings.h"
+
+// Boiler Plate --------------------------------------------------------------------------------------------------------
+#pragma region Boilerplate
 
 // Volk headers
 #ifdef IMGUI_IMPL_VULKAN_USE_VOLK
@@ -48,8 +40,7 @@
 static VkDebugReportCallbackEXT g_DebugReport = VK_NULL_HANDLE;
 #endif
 
-// Boiler Plate --------------------------------------------------------------------------------------------------------
-#pragma region Boilerplate
+
 
 // Data
 static VkAllocationCallbacks*   g_Allocator = nullptr;
@@ -365,7 +356,6 @@ static void FramePresent(ImGui_ImplVulkanH_Window* wd)
 
 int main(int, char**)
 {
-
     FreeConsole();
 
 // Override main windows-window ----------------------------------------------------------------------------------------
@@ -494,55 +484,54 @@ int main(int, char**)
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    /** Init save system. */
-    save_system save;
-    save.load_settings();
+    /** Initialize Values. */
+    FRuntimeValues* runtimeValues = new FRuntimeValues();
+    FSavedValues* savedValues = new FSavedValues();
+    *savedValues = LSaveSystem::loadSettings();
+
+    // Initialize Manager
+    auto Manager = std::make_unique<LManager>();
+
+    // Initialize Window
+    Manager->createWindow<WSettings>();
 
     /** Init ffmpeg execution struct. */
     ffmpeg_execution* ffmpeg_execution_ptr = new(ffmpeg_execution);
 
-    /** Init global values. */
-    global_values* global_values_ptr = new global_values();
-
-    /** Window Settings */
-    window_settings* window_settings_ptr = new window_settings();
+    // Call OnBeginPlay for all Windows
+    Manager->updateOnBeginPlay();
 
 #pragma endregion
-
-#pragma region LoopStart
 
     // Main loop
     while (!glfwWindowShouldClose(window))
     {
-        // Poll and handle events (inputs, window resize, etc.)
-        // You can read the io.WantCaptureMouse, io.WantCaptureKeyboard flags to tell if dear imgui wants to use your inputs.
-        // - When io.WantCaptureMouse is true, do not dispatch mouse input data to your main application, or clear/overwrite your copy of the mouse data.
-        // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
-        // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
-        glfwPollEvents();
+        #pragma region LoopStartLogicUI
 
-        // Resize swap chain?
-        int fb_width, fb_height;
-        glfwGetFramebufferSize(window, &fb_width, &fb_height);
-        if (fb_width > 0 && fb_height > 0 && (g_SwapChainRebuild || g_MainWindowData.Width != fb_width || g_MainWindowData.Height != fb_height))
-        {
-            ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
-            ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, wd, g_QueueFamily, g_Allocator, fb_width, fb_height, g_MinImageCount, 0);
-            g_MainWindowData.FrameIndex = 0;
-            g_SwapChainRebuild = false;
-        }
-        if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
-        {
-            ImGui_ImplGlfw_Sleep(10);
-            continue;
-        }
+            glfwPollEvents();
 
-        // Start the Dear ImGui frame
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+            // Resize swap chain?
+            int fb_width, fb_height;
+            glfwGetFramebufferSize(window, &fb_width, &fb_height);
+            if (fb_width > 0 && fb_height > 0 && (g_SwapChainRebuild || g_MainWindowData.Width != fb_width || g_MainWindowData.Height != fb_height))
+            {
+                ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
+                ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, wd, g_QueueFamily, g_Allocator, fb_width, fb_height, g_MinImageCount, 0);
+                g_MainWindowData.FrameIndex = 0;
+                g_SwapChainRebuild = false;
+            }
+            if (glfwGetWindowAttrib(window, GLFW_ICONIFIED) != 0)
+            {
+                ImGui_ImplGlfw_Sleep(10);
+                continue;
+            }
 
-#pragma endregion
+            // Start the Dear ImGui frame
+            ImGui_ImplVulkan_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+        #pragma endregion
 
 // Application Windows -------------------------------------------------------------------------------------------------
 #pragma region ApplicationDrawWindows
@@ -568,10 +557,10 @@ int main(int, char**)
                 // -----------------------------------------------------------------------------------------------------
                 ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
-                ImGui::InputText("Daz Image(s) Input Path", save.settings.input_path, IM_ARRAYSIZE(save.settings.input_path));
+                ImGui::InputText("Daz Image(s) Input Path", savedValues->inputPath, IM_ARRAYSIZE(savedValues->inputPath));
                     ImGui::SetItemTooltip(R"(Folder where the ".png" or ".tif" files from Daz are.)");
                 ImGui::Spacing();
-                ImGui::InputText("Daz Image(s) Output Path", save.settings.output_path, IM_ARRAYSIZE(save.settings.output_path));
+                ImGui::InputText("Daz Image(s) Output Path", savedValues->outputPath, IM_ARRAYSIZE(savedValues->outputPath));
                     ImGui::SetItemTooltip("Save folder for converted files.");
 
                 // -----------------------------------------------------------------------------------------------------
@@ -649,11 +638,13 @@ int main(int, char**)
                 }
 
                 // HDR = always 10 bit
-                if (save.settings.selected_dynamic_range == 1) save.settings.selected_bit_depth_index = 1;
-                // JPGEG = always 8 bit and SDR
-                if (save.settings.selected_image_format == 3)
-                    {save.settings.selected_bit_depth_index = 0;
-                    save.settings.selected_dynamic_range = 0;
+                if (savedValues->selectedDynamicRangeMode == EEncodingDynamicRangeModes::HDR)
+                    savedValues->selectedBitDepth = 10;
+                // JPG = always 8 bit and SDR
+                if (savedValues->selectedImageFormat == EEncodingImageFormats::jpg)
+                {
+                    savedValues->selectedBitDepth = 8;
+                    savedValues->selectedDynamicRangeMode = EEncodingDynamicRangeModes::SDR;
                 }
 
                 // -----------------------------------------------------------------------------------------------------
@@ -667,18 +658,18 @@ int main(int, char**)
             {
                 ImGui::Spacing();
 
-                ImGui::SliderFloat("Chromatic Aberration", &save.settings.chromatic_aberration, 0.0f, 0.01f, "%.4f");
+                ImGui::SliderFloat("Chromatic Aberration", &savedValues->chromaticAberrationIntensity, 0.0f, 0.01f, "%.4f");
                     ImGui::SetItemTooltip(
                         "Adds chromatic abberation at the borders to simulate a real lens.");
                 ImGui::Spacing();
-                ImGui::Checkbox("Enable Image Enhancement", &save.settings.enable_image_enhancement);
+                ImGui::Checkbox("Enable Image Enhancement", &savedValues->enableImageEnhancement);
                     ImGui::SetItemTooltip(
                         "Reduces banding and adds micro detail for a better compression,\nbut loses minimal amount of detail.");
 
                 // -----------------------------------------------------------------------------------------------------
                 ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
-                ImGui::InputText("Logo File Path", save.settings.logo_path, IM_ARRAYSIZE(save.settings.logo_path));
+                ImGui::InputText("Logo File Path", savedValues->logoPath, IM_ARRAYSIZE(savedValues->logoPath));
                     ImGui::SetItemTooltip(
                         "Leave empty for no logo.\nLogo must be \".png\" with alpha-channel.\nFile must have same aspect ratio as final image.\nLogo must be scaled and placed correctly.");
 
@@ -744,12 +735,12 @@ int main(int, char**)
                 static float progress_bar_progress {0.0f};
                 if (ImGui::Button("START CONVERSION"))
                 {
-                    ffmpeg_execution_ptr->Run(save.settings);
+                    ffmpeg_execution_ptr->Run(*savedValues);
                 }   ImGui::SetItemTooltip("Start converting the images.");
 
                 // Progress Bar ----------------------------------------------------------------------------------------
                 ImGui::SameLine();
-                ImGui::ProgressBar(global_values_ptr->current_conversion_progression);
+                ImGui::ProgressBar(runtimeValues->conversionProgress);
 
                 // -----------------------------------------------------------------------------------------------------
                 ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
@@ -763,12 +754,12 @@ int main(int, char**)
                 ImGui::Spacing();
 
                 // ffmpeg location -------------------------------------------------------------------------------------
-                ImGui::InputText("ffmpeg location", save.settings.ffmpeg_path, IM_ARRAYSIZE(save.settings.ffmpeg_path));
+                ImGui::InputText("ffmpeg location", savedValues->ffmpegExecutablePath, IM_ARRAYSIZE(savedValues->ffmpegExecutablePath));
                     ImGui::SetItemTooltip("File path to the executable, this program won't run without it.");
 
                 ImGui::Spacing();
 
-                ImGui::Checkbox("Enable ffmpeg Log", &save.settings.generate_ffmpeg_log);
+                ImGui::Checkbox("Enable ffmpeg Log", &savedValues->generateFfmpegLog);
                     ImGui::SetItemTooltip("If enabled, will output the ffmpeg log to the output folder.");
 
                 // -----------------------------------------------------------------------------------------------------
@@ -800,7 +791,7 @@ int main(int, char**)
 
                         if (ImGui::Button("Yes", ImVec2(120, 0)))
                         {
-                            save.revert_settings();
+                            LSaveSystem::revertValues(*savedValues);
                             ImGui::CloseCurrentPopup();
                         }
 
@@ -819,7 +810,7 @@ int main(int, char**)
 
                 if (ImGui::Button("Save Settings"))
                 {
-                    save.save_settings();
+                    LSaveSystem::saveSettings(*savedValues);
                 }   ImGui::SetItemTooltip("Save current settings.");
 
                 // Content for Input
@@ -827,49 +818,59 @@ int main(int, char**)
             }
 
         ImGui::EndTabBar();
+
+        // Update Windows
+        Manager->updateTick();
+
         ImGui::End();
 
 #pragma endregion
 
-// Render Image --------------------------------------------------------------------------------------------------------
-#pragma region RenderImage
+        #pragma region LoopRenderImage
 
-        // Rendering
-        ImGui::Render();
-        ImDrawData* draw_data = ImGui::GetDrawData();
-        const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
-        if (!is_minimized)
-        {
-            wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
-            wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
-            wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
-            wd->ClearValue.color.float32[3] = clear_color.w;
-            FrameRender(wd, draw_data);
-            FramePresent(wd);
-        }
+            // Rendering
+            ImGui::Render();
+            ImDrawData* draw_data = ImGui::GetDrawData();
+            const bool is_minimized = (draw_data->DisplaySize.x <= 0.0f || draw_data->DisplaySize.y <= 0.0f);
+            if (!is_minimized)
+            {
+                wd->ClearValue.color.float32[0] = clear_color.x * clear_color.w;
+                wd->ClearValue.color.float32[1] = clear_color.y * clear_color.w;
+                wd->ClearValue.color.float32[2] = clear_color.z * clear_color.w;
+                wd->ClearValue.color.float32[3] = clear_color.w;
+                FrameRender(wd, draw_data);
+                FramePresent(wd);
+            }
+
+        #pragma endregion
+
     }
-
-#pragma endregion
 
 // Cleanup -------------------------------------------------------------------------------------------------------------
 #pragma region Cleanup
 
     delete ffmpeg_execution_ptr;
-    delete global_values_ptr;
-    delete window_settings_ptr;
+    delete runtimeValues;
+    delete savedValues;
 
-    // Cleanup
-    err = vkDeviceWaitIdle(g_Device);
-    check_vk_result(err);
-    ImGui_ImplVulkan_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    Manager->UpdateOnEndPlay();
+    Manager->emptyManager();
 
-    CleanupVulkanWindow(&g_MainWindowData);
-    CleanupVulkan();
+    #pragma region CleanupUI
 
-    glfwDestroyWindow(window);
-    glfwTerminate();
+        err = vkDeviceWaitIdle(g_Device);
+        check_vk_result(err);
+        ImGui_ImplVulkan_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+
+        CleanupVulkanWindow(&g_MainWindowData);
+        CleanupVulkan();
+
+        glfwDestroyWindow(window);
+        glfwTerminate();
+
+    #pragma endregion
 
 #pragma endregion
 

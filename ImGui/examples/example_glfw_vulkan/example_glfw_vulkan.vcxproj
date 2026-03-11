@@ -173,6 +173,7 @@
     <ClCompile Include="..\..\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\..\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\Manager\LManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h" />
@@ -181,9 +182,15 @@
     <ClInclude Include="..\..\backends\imgui_impl_glfw.h" />
     <ClInclude Include="..\..\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="Source\ffmpeg_execution.h" />
-    <ClInclude Include="Source\save_system.h" />
-    <ClInclude Include="Source\Values\global_values.h" />
-    <ClInclude Include="Source\Windows\window_settings.h" />
+    <ClInclude Include="Source\LWindow.h" />
+    <ClInclude Include="Source\Manager\LManager.h" />
+    <ClInclude Include="Source\Manager\LSaveSystem.h" />
+    <ClInclude Include="Source\Types\Enums\EEncodingAcceleration.h" />
+    <ClInclude Include="Source\Types\Enums\EEncodingDynamicRangeModes.h" />
+    <ClInclude Include="Source\Types\Enums\EEncodingImageFormats.h" />
+    <ClInclude Include="Source\Types\Structs\FRuntimeValues.h" />
+    <ClInclude Include="Source\Types\Structs\FSavedValues.h" />
+    <ClInclude Include="Source\Windows\WSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\misc\debuggers\imgui.natstepfilter" />
