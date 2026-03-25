@@ -181,6 +181,7 @@
     <ClInclude Include="..\..\imgui_internal.h" />
     <ClInclude Include="..\..\backends\imgui_impl_glfw.h" />
     <ClInclude Include="..\..\backends\imgui_impl_vulkan.h" />
+    <ClInclude Include="Source\ffd.h" />
     <ClInclude Include="Source\ffmpeg_execution.h" />
     <ClInclude Include="Source\LWindow.h" />
     <ClInclude Include="Source\Manager\LManager.h" />
@@ -188,6 +189,7 @@
     <ClInclude Include="Source\Settings\SubSettings\TSavedValues.h" />
     <ClInclude Include="Source\Settings\TSettings.h" />
     <ClInclude Include="Source\Types\Enums\EEncodingAcceleration.h" />
+    <ClInclude Include="Source\Types\Enums\EEncodingBitDepth.h" />
     <ClInclude Include="Source\Types\Enums\EEncodingDynamicRangeModes.h" />
     <ClInclude Include="Source\Types\Enums\EEncodingImageFormats.h" />
     <ClInclude Include="Source\Windows\WAbout.h" />

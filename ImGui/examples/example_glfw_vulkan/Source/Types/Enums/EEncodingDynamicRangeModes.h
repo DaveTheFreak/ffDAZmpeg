@@ -2,11 +2,21 @@
 
 #pragma once
 
-#include <cstdint>
-
 /** Supported dynamic range modes: SDR, HDR. */
-enum class EEncodingDynamicRangeModes : uint8_t
+struct EEncodingDynamicRangeModes
 {
-    SDR,   // 8 bits
-    HDR    // 8 bits, 10 bits
+    enum class Type : uint8_t
+    {
+        SDR,    // 8 bits
+        HDR,    // 8 bits, 10 bits
+        COUNT
+    };
+
+    static constexpr const char* ComboBoxTile = "Dynamic Range";
+    static constexpr const char* NamesArray[static_cast<size_t>(Type::COUNT)] = {
+        "SDR",
+        "HDR"
+    };
 };
+
+

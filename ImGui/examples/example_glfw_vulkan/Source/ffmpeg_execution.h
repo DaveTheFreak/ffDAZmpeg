@@ -32,8 +32,8 @@ struct ffmpeg_execution
 
         switch (settings->savedValues.selectedImageFormat)
         {
-            case EEncodingImageFormats::avif: output_file += ".avif"; break;
-            case EEncodingImageFormats::jpg: output_file += ".jpg"; break;
+            case EEncodingImageFormats::Type::avif: output_file += ".avif"; break;
+            case EEncodingImageFormats::Type::jpg: output_file += ".jpg"; break;
         }
 
         // Effects -----------------------------------------------------------------------------------------------------
@@ -80,21 +80,27 @@ struct ffmpeg_execution
         std::string dynamic_range_params;
         std::string hw_upload;
         std::string hw_init;
-        std::string hdr_curve {"0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1"};
+        std::string hdr_curve = std::format("0/{} 0.1/{} 0.5/{} 0.8/{} 1/{}",
+            0.0f + settings->savedValues.hdrCurve[0],
+            0.1f + settings->savedValues.hdrCurve[1],
+            0.5f + settings->savedValues.hdrCurve[2],
+            0.8f + settings->savedValues.hdrCurve[3],
+            1.0f + settings->savedValues.hdrCurve[4]);
+
         std::string hdr_desaturation {"colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,"};
 
         switch (settings->savedValues.selectedImageFormat)
         {
-            case EEncodingImageFormats::avif: // AVIF
+            case EEncodingImageFormats::Type::avif: // AVIF
             {
                 switch (settings->savedValues.selectEncodingAcceleration)
                 {
-                    case EEncodingAcceleration::Auto: // NVENC
+                    case EEncodingAcceleration::Type::Auto: // NVENC
                     {
-                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == 0) ? "yuv420p" : "p010le";
+                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8) ? "yuv420p" : "p010le";
                         encoding = "-c:v av1_nvenc -rc constqp -qp 8 -preset p7 -pix_fmt " + pix_fmt;
 
-                        if (settings->savedValues.selectedBitDepth == 8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::SDR) // SDR
+                        if (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::SDR) // SDR
                         {
                             dynamic_range_params =
                                 "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
@@ -114,13 +120,13 @@ struct ffmpeg_execution
                         }
                         break;
                     }
-                    case EEncodingAcceleration::Software: // SOFTWARE
+                    case EEncodingAcceleration::Type::Software: // SOFTWARE
                     {
                         // Software encoders typically expect standard planar formats rather than hardware semi-planar formats.
-                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == 8) ? "yuv420p" : "yuv420p10le";
+                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8) ? "yuv420p" : "yuv420p10le";
                         encoding = "-c:v libsvtav1 -preset 6 -crf 20 -pix_fmt " + pix_fmt;
 
-                        if (settings->savedValues.selectedBitDepth == 8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::SDR) // SDR
+                        if (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::SDR) // SDR
                         {
                             dynamic_range_params =
                                 "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
@@ -140,16 +146,16 @@ struct ffmpeg_execution
                         }
                         break;
                     }
-                    case EEncodingAcceleration::Vulkan: // VULKAN
+                    case EEncodingAcceleration::Type::Vulkan: // VULKAN
                     {
-                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == 8) ? "nv12" : "p010le";
+                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8) ? "nv12" : "p010le";
 
                         hw_init = "-init_hw_device vulkan=vk -filter_hw_device vk ";
                         hw_upload = ",format=" + pix_fmt + ",hwupload";
 
                         encoding = "-c:v av1_vulkan -qp 8";
 
-                        if (settings->savedValues.selectedBitDepth == 8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::SDR) // SDR
+                        if (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::SDR) // SDR
                         {
                             dynamic_range_params =
                                 "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
@@ -172,7 +178,7 @@ struct ffmpeg_execution
                 }
                 break;
             }
-            case EEncodingImageFormats::jpg: // JPEG
+            case EEncodingImageFormats::Type::jpg: // JPEG
             {
                 break;
             }

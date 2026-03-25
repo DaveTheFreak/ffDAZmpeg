@@ -5,6 +5,7 @@
 #include "imgui.h"
 
 #include "examples/example_glfw_vulkan/Source/LWindow.h"
+#include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingBitDepth.h"
 
 class WConversion : public LWindow
 {
@@ -90,6 +91,42 @@ public:
             ImGui::SetItemTooltip(
                 "Reduces banding and adds micro detail for a better compression,\nbut loses minimal amount of detail.");
 
+            ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
+
+            // HDR curve. ----------------------------------------------------------------------------------------------
+            if (ImGui::CollapsingHeader("HDR Curve"))
+            {
+                ImGui::Indent();
+
+                static constexpr ImVec2 HDR_CURVE_VEC2 = {80.f, 300.f};
+                static constexpr float HDR_CURVE_MIN = -0.25f;
+                static constexpr float HDR_CURVE_MAX = 0.25f;
+
+                ImGui::VSliderFloat("0.0", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[0], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::SameLine(0, 20.f);
+
+                ImGui::VSliderFloat("0.1", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[1], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::SameLine(0, 20.f);
+
+                ImGui::VSliderFloat("0.5", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[2], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::SameLine(0, 20.f);
+
+                ImGui::VSliderFloat("0.8", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[3], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::SameLine(0, 20.f);
+
+                ImGui::VSliderFloat("1.0", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[4], HDR_CURVE_MIN, HDR_CURVE_MAX);
+
+                settings->savedValues.hdrCurve[0] = std::clamp(settings->savedValues.hdrCurve[0], 0.0f, 1.0f);
+                settings->savedValues.hdrCurve[1] = std::clamp(settings->savedValues.hdrCurve[1], -0.1f, 0.9f);
+                settings->savedValues.hdrCurve[2] = std::clamp(settings->savedValues.hdrCurve[2], -0.5f, 0.5f);
+                settings->savedValues.hdrCurve[3] = std::clamp(settings->savedValues.hdrCurve[3], -0.8f, 0.2f);
+                settings->savedValues.hdrCurve[4] = std::clamp(settings->savedValues.hdrCurve[4], -1.0f, 0.0f);
+
+                ImGui::Unindent();
+            }
+
+            ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
+
             // Logo file path. -----------------------------------------------------------------------------------------
             ImGui::InputText(
                 "Logo File Path",
@@ -108,108 +145,36 @@ public:
             ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
 
                 // Format ----------------------------------------------------------------------------------------------
-                static const char* imageFormatsAvailable[] = { "AVIF", "JPEG" };
-                uint8_t currentFormatIndex = static_cast<uint8_t>(settings->savedValues.selectedImageFormat);
-
-                if (ImGui::BeginCombo("Format", imageFormatsAvailable[currentFormatIndex]))
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(imageFormatsAvailable); n++)
-                    {
-                        bool isSelected = (currentFormatIndex == n);
-
-                        if (ImGui::Selectable(imageFormatsAvailable[n], isSelected))
-                            settings->savedValues.selectedImageFormat = static_cast<EEncodingImageFormats>(n);
-
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-                ImGui::SetItemTooltip("Currently only AVIF is being supported.");
+                ffd::drop_down::draw_enum<EEncodingImageFormats>(settings->savedValues.selectedImageFormat);
+                ImGui::SetItemTooltip("Only avif is currently working.");
 
                 ImGui::Spacing();
 
                 // Dynamic Range ---------------------------------------------------------------------------------------
-                static const char* dynamicRangesAvailable[] = { "SDR", "HDR", };
-                uint8_t currentRangesIndex = static_cast<uint8_t>(settings->savedValues.selectedDynamicRangeMode);
-
-                if (ImGui::BeginCombo("Dynamic Range", dynamicRangesAvailable[currentRangesIndex]))
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(dynamicRangesAvailable); n++)
-                    {
-                        bool isSelected = (currentRangesIndex == n);
-
-                        if (ImGui::Selectable(dynamicRangesAvailable[n], isSelected))
-                            settings->savedValues.selectedDynamicRangeMode = static_cast<EEncodingDynamicRangeModes>(n);
-
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
+                ffd::drop_down::draw_enum<EEncodingDynamicRangeModes>(settings->savedValues.selectedDynamicRangeMode);
                 ImGui::SetItemTooltip("HDR requires capable image viewers that support HDR PQ.");
 
                 ImGui::Spacing();
 
                 // Bit depth -------------------------------------------------------------------------------------------
-                static const char* bitDepthsAvailable[] = { "8", "10" };
-                static const uint8_t bitDepthValues[] = { 8, 10 };
-
-                // Determine the index based on the actual stored value
-                int currentIndex = (settings->savedValues.selectedBitDepth == 10) ? 1 : 0;
-
-                if (ImGui::BeginCombo("Bit Depth", bitDepthsAvailable[currentIndex]))
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(bitDepthsAvailable); n++)
-                    {
-                        bool isSelected = (currentIndex == n);
-
-                        if (ImGui::Selectable(bitDepthsAvailable[n], isSelected))
-                        {
-                            // Assign the actual value (8 or 10), not the index
-                            settings->savedValues.selectedBitDepth = bitDepthValues[n];
-                        }
-
-                        if (isSelected)
-                        {
-                            ImGui::SetItemDefaultFocus();
-                        }
-                    }
-                    ImGui::EndCombo();
-                }
+                ffd::drop_down::draw_enum<EEncodingBitDepth>(settings->savedValues.selectedBitDepth);
                 ImGui::SetItemTooltip("Note: JPEG does not support 10 bits.");
 
-                // HDR = always 10 bit
-                if (settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::HDR)
-                    settings->savedValues.selectedBitDepth = 10;
-                // JPG = always 8 bit and SDR
-                if (settings->savedValues.selectedImageFormat == EEncodingImageFormats::jpg)
-                {
-                    settings->savedValues.selectedBitDepth = 8;
-                    settings->savedValues.selectedDynamicRangeMode = EEncodingDynamicRangeModes::SDR;
-                }
+                    // HDR = always 10 bit
+                    if (settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::HDR)
+                        settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x10;
+                    // JPG = always 8 bit and SDR
+                    if (settings->savedValues.selectedImageFormat == EEncodingImageFormats::Type::jpg)
+                    {
+                        settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x10;
+                        settings->savedValues.selectedDynamicRangeMode = EEncodingDynamicRangeModes::Type::SDR;
+                    }
 
             ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
 
                 // Encoder ---------------------------------------------------------------------------------------------
 
-                static const char* encoderOptions[] = { "Auto", "Vulkan", "Software"};
-                uint8_t currentEncoderIndex = static_cast<uint8_t>(settings->savedValues.selectEncodingAcceleration);
-
-                if (ImGui::BeginCombo("Encoder", encoderOptions[currentEncoderIndex]))
-                {
-                    for (int n = 0; n < IM_ARRAYSIZE(encoderOptions); n++)
-                    {
-                        bool isSelected = (currentEncoderIndex == n);
-
-                        if (ImGui::Selectable(encoderOptions[n], isSelected))
-                            settings->savedValues.selectEncodingAcceleration = static_cast<EEncodingAcceleration>(n);
-
-                        if (isSelected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
+                ffd::drop_down::draw_enum<EEncodingAcceleration>(settings->savedValues.selectEncodingAcceleration);
                 ImGui::SetItemTooltip("Auto will select vendor specific options automatically.");
 
             ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------

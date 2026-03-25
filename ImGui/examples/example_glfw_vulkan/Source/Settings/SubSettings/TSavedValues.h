@@ -3,6 +3,7 @@
 #pragma once
 
 #include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingAcceleration.h"
+#include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingBitDepth.h"
 #include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingDynamicRangeModes.h"
 #include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingImageFormats.h"
 
@@ -26,13 +27,13 @@ struct TSavedValues
 #pragma region VariablesImageFormat
 
     /** "AVIF", "JPEG" */
-    EEncodingImageFormats selectedImageFormat = EEncodingImageFormats::avif;
+    EEncodingImageFormats::Type selectedImageFormat = EEncodingImageFormats::Type::avif;
 
     /** "SDR", "HDR" */
-    EEncodingDynamicRangeModes selectedDynamicRangeMode = EEncodingDynamicRangeModes::SDR;
+    EEncodingDynamicRangeModes::Type selectedDynamicRangeMode = EEncodingDynamicRangeModes::Type::SDR;
 
     /** 8, 10 */
-    uint8_t selectedBitDepth = 8;
+    EEncodingBitDepth::Type selectedBitDepth = EEncodingBitDepth::Type::x8;
 
 #pragma endregion
 
@@ -45,6 +46,9 @@ struct TSavedValues
     /** Reduces dithering, adds microdetail and improves encoding. */
     bool enableImageEnhancement {true};
 
+    /** HDR mapping curve for various brightness levels. */
+    float hdrCurve[5] = {0.f, -0.02f, -0.04f, -0.06f, 0.f};
+
     /** Optional: A logo to be put on top of the actual image, scales with its size, must have same aspect-ratio. */
     char logoPath[512] =
         R"(C:\Users\DaveTheFreak\Nextcloud\TOOLS\CGI\Daz3D\TEXTURES\DaveLaMuertaLogo.png)";
@@ -55,7 +59,7 @@ struct TSavedValues
 #pragma region VariablesEncoder
 
     /** Encoding acceleration for the image output. */
-    EEncodingAcceleration selectEncodingAcceleration = EEncodingAcceleration::Vulkan;
+    EEncodingAcceleration::Type selectEncodingAcceleration = EEncodingAcceleration::Type::Vulkan;
 
 #pragma endregion
 

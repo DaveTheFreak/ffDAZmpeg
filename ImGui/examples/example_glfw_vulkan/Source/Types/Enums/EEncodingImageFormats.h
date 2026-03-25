@@ -2,11 +2,19 @@
 
 #pragma once
 
-#include <cstdint>
-
 /** Supported image output formats. */
-enum class EEncodingImageFormats : uint8_t
+struct EEncodingImageFormats
 {
-    avif,   // 8 bit SDR, 10 bit SDR & 10 bit HDR
-    jpg     // 8 bit SDR
+    enum class Type : uint8_t
+    {
+        avif,   // 8 bit SDR, 10 bit SDR & 10 bit HDR
+        jpg,    // 8 bit SDR
+        COUNT
+    };
+
+    static constexpr const char* ComboBoxTile = "Format";
+    static constexpr const char* NamesArray[static_cast<size_t>(Type::COUNT)] = {
+        "AVIF",
+        "JPG"
+    };
 };
