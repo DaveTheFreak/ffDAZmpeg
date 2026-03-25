@@ -2,14 +2,12 @@
 
 #pragma once
 
-#include <cstdint>
-
 #include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingAcceleration.h"
 #include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingDynamicRangeModes.h"
 #include "examples/example_glfw_vulkan/Source/Types/Enums/EEncodingImageFormats.h"
 
 /** Values and Settings that are saved between sessions. */
-struct FSavedValues
+struct TSavedValues
 {
 // VARIABLES ===========================================================================================================
 #pragma region Variables

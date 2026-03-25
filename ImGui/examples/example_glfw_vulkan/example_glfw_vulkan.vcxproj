@@ -184,18 +184,23 @@
     <ClInclude Include="Source\ffmpeg_execution.h" />
     <ClInclude Include="Source\LWindow.h" />
     <ClInclude Include="Source\Manager\LManager.h" />
-    <ClInclude Include="Source\Manager\LSaveSystem.h" />
+    <ClInclude Include="Source\Settings\SubSettings\TRuntimeValues.h" />
+    <ClInclude Include="Source\Settings\SubSettings\TSavedValues.h" />
+    <ClInclude Include="Source\Settings\TSettings.h" />
     <ClInclude Include="Source\Types\Enums\EEncodingAcceleration.h" />
     <ClInclude Include="Source\Types\Enums\EEncodingDynamicRangeModes.h" />
     <ClInclude Include="Source\Types\Enums\EEncodingImageFormats.h" />
-    <ClInclude Include="Source\Types\Structs\FRuntimeValues.h" />
-    <ClInclude Include="Source\Types\Structs\FSavedValues.h" />
+    <ClInclude Include="Source\Windows\WAbout.h" />
+    <ClInclude Include="Source\Windows\WConversion.h" />
     <ClInclude Include="Source\Windows\WSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\misc\debuggers\imgui.natstepfilter" />
     <None Include="..\..\misc\debuggers\imgui.natvis" />
     <None Include="..\README.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Source\Types\Structs\" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

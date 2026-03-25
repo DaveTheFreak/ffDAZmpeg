@@ -3,12 +3,12 @@
 #pragma once
 
 #include <thread>
-#include <cstdio>
 #include <string>
 #include <filesystem>
 #include <windows.h>
 
-#include "save_system.h"
+#include "Settings/TSettings.h"
+#include "Settings/SubSettings/TSavedValues.h"
 
 /** This creates the actual command(s) for ffmpeg. */
 struct ffmpeg_execution
@@ -16,32 +16,29 @@ struct ffmpeg_execution
 // METHODS =============================================================================================================
 #pragma region Methods
 
-    const char* get_ffmpeg_arguments(const app_settings &settings)
+    const char* get_ffmpeg_arguments(const TSettings* settings)
     {
         ffmpeg_command.clear();
 
         // Input format (.png or .tif) --------------------------------------------------------------------------------
 
         std::filesystem::path input_file =
-            std::filesystem::path(settings.input_path) / current_filename;
+            std::filesystem::path(settings->savedValues.inputPath) / current_filename;
 
         // Output format (.png or .tif) -------------------------------------------------------------------------------
 
         std::filesystem::path output_file =
-            std::filesystem::path(settings.output_path) / std::filesystem::path(current_filename).stem();
+            std::filesystem::path(settings->savedValues.outputPath) / std::filesystem::path(current_filename).stem();
 
-        switch (settings.selected_image_format)
+        switch (settings->savedValues.selectedImageFormat)
         {
-            case 0: output_file += ".avif"; break;
-            case 1: output_file += ".heic"; break;
-            case 2: output_file += ".jxl"; break;
-            case 3: output_file += ".jpg"; break;
-            default: break;
+            case EEncodingImageFormats::avif: output_file += ".avif"; break;
+            case EEncodingImageFormats::jpg: output_file += ".jpg"; break;
         }
 
         // Effects -----------------------------------------------------------------------------------------------------
 
-        std::string chromatic_aberration_intensity = std::to_string(settings.chromatic_aberration);
+        std::string chromatic_aberration_intensity = std::to_string(settings->savedValues.chromaticAberrationIntensity);
 
         std::string ca_logic =
             "[0:v]zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=gbrp16le,extractplanes=r+g+b[r][g][b];";
@@ -58,11 +55,11 @@ struct ffmpeg_execution
         std::string filter_chain;
         std::string logo_input;
 
-        if (settings.logo_path[0] != '\0'
-            && std::filesystem::exists(settings.logo_path)
-            && std::filesystem::is_regular_file(settings.logo_path))
+        if (settings->savedValues.logoPath[0] != '\0'
+            && std::filesystem::exists(settings->savedValues.logoPath)
+            && std::filesystem::is_regular_file(settings->savedValues.logoPath))
         {
-            logo_input = " -i \"" + std::string(settings.logo_path) + "\"";
+            logo_input = " -i \"" + std::string(settings->savedValues.logoPath) + "\"";
 
             ca_logic += "[v_ca];";
             std::string logo_logic = "[v_ca]split=2[v_ca_main][v_ca_ref];";
@@ -86,18 +83,18 @@ struct ffmpeg_execution
         std::string hdr_curve {"0/0 0.1/0.09 0.5/0.45 0.8/0.75 1/1"};
         std::string hdr_desaturation {"colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,"};
 
-        switch (settings.selected_image_format)
+        switch (settings->savedValues.selectedImageFormat)
         {
-            case 0: // AVIF
+            case EEncodingImageFormats::avif: // AVIF
             {
-                switch (settings.selected_encoder_option)
+                switch (settings->savedValues.selectEncodingAcceleration)
                 {
-                    case 0: // NVENC
+                    case EEncodingAcceleration::Auto: // NVENC
                     {
-                        std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "yuv420p" : "p010le";
+                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == 0) ? "yuv420p" : "p010le";
                         encoding = "-c:v av1_nvenc -rc constqp -qp 8 -preset p7 -pix_fmt " + pix_fmt;
 
-                        if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
+                        if (settings->savedValues.selectedBitDepth == 8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::SDR) // SDR
                         {
                             dynamic_range_params =
                                 "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
@@ -117,13 +114,13 @@ struct ffmpeg_execution
                         }
                         break;
                     }
-                    case 1: // SOFTWARE
+                    case EEncodingAcceleration::Software: // SOFTWARE
                     {
                         // Software encoders typically expect standard planar formats rather than hardware semi-planar formats.
-                        std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "yuv420p" : "yuv420p10le";
+                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == 8) ? "yuv420p" : "yuv420p10le";
                         encoding = "-c:v libsvtav1 -preset 6 -crf 20 -pix_fmt " + pix_fmt;
 
-                        if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
+                        if (settings->savedValues.selectedBitDepth == 8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::SDR) // SDR
                         {
                             dynamic_range_params =
                                 "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
@@ -143,16 +140,16 @@ struct ffmpeg_execution
                         }
                         break;
                     }
-                    case 2: // VULKAN
+                    case EEncodingAcceleration::Vulkan: // VULKAN
                     {
-                        std::string pix_fmt = (settings.selected_bit_depth_index == 0) ? "nv12" : "p010le";
+                        std::string pix_fmt = (settings->savedValues.selectedBitDepth == 8) ? "nv12" : "p010le";
 
                         hw_init = "-init_hw_device vulkan=vk -filter_hw_device vk ";
                         hw_upload = ",format=" + pix_fmt + ",hwupload";
 
                         encoding = "-c:v av1_vulkan -qp 8";
 
-                        if (settings.selected_bit_depth_index == 0 || settings.selected_dynamic_range == 0) // SDR
+                        if (settings->savedValues.selectedBitDepth == 8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::SDR) // SDR
                         {
                             dynamic_range_params =
                                 "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
@@ -172,35 +169,25 @@ struct ffmpeg_execution
                         }
                         break;
                     }
-                    default: break;
                 }
                 break;
             }
-            case 1: // HEIC
+            case EEncodingImageFormats::jpg: // JPEG
             {
                 break;
             }
-            case 3: // JPEG XL
-            {
-                break;
-            }
-            case 4: // JPEG
-            {
-                break;
-            }
-            default: break;
         }
 
         // Image Enhancement -------------------------------------------------------------------------------------------
 
         std::string dither_param;
 
-if (settings.enable_image_enhancement)
+        if (settings->savedValues.enableImageEnhancement)
         {
             dither_param = "-sws_dither ed ";
 
             int img_width = 1920;
-            std::string ffprobe_path = std::string(settings.ffmpeg_path) + "\\ffprobe.exe";
+            std::string ffprobe_path = std::string(settings->savedValues.ffmpegExecutablePath) + "\\ffprobe.exe";
 
             // Execute ffprobe directly without cmd.exe
             std::string probe_cmd = "\"" + ffprobe_path + "\" -v error -select_streams v:0 -show_entries stream=width -of default=nw=1:nk=1 \"" + input_file.string() + "\"";
@@ -280,13 +267,13 @@ if (settings.enable_image_enhancement)
     }
 
     /** Run the conversions. */
-void Run(app_settings settings)
+    void Run(TSettings* settings)
     {
         std::thread([this, settings]()
         {
-            std::string local_ffmpeg_path = std::string(settings.ffmpeg_path) + "\\ffmpeg.exe";
+            std::string local_ffmpeg_path = std::string(settings->savedValues.ffmpegExecutablePath) + "\\ffmpeg.exe";
 
-            for (const auto& entry : std::filesystem::directory_iterator(settings.input_path))
+            for (const auto& entry : std::filesystem::directory_iterator(settings->savedValues.inputPath))
             {
                 if (entry.is_regular_file()
                     && (entry.path().extension() == ".png" || entry.path().extension() == ".tif"))
@@ -303,9 +290,9 @@ void Run(app_settings settings)
                     SECURITY_ATTRIBUTES sa = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
                     HANDLE hLogFile = NULL;
 
-                    if (settings.generate_ffmpeg_log)
+                    if (settings->savedValues.generateFfmpegLog)
                     {
-                        std::string log_file = std::string(settings.output_path) + "\\ffmpeg_log.txt";
+                        std::string log_file = std::string(settings->savedValues.outputPath) + "\\ffmpeg_log.txt";
                         hLogFile = CreateFileA(log_file.c_str(), FILE_APPEND_DATA, FILE_SHARE_READ, &sa, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
                     }
 

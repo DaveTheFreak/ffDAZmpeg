@@ -6,6 +6,7 @@
 // METHODS =============================================================================================================
 #pragma region Methods
 
+    /** Remove all windows. */
     void LManager::emptyManager()
     {
         {
@@ -15,22 +16,22 @@
         }
     }
 
-void LManager::updateOnBeginPlay() const
+    void LManager::updateOnBeginPlay(TSettings* settings) const
     {
         for (const auto &window : windows)
-            window->OnBeginPlay();
+            window->OnBeginPlay(settings);
     }
 
-void LManager::updateTick() const
+    void LManager::updateTick(TSettings* settings) const
     {
         for (const auto &window : windows)
-            window->Tick();
+            window->Tick(settings);
     }
 
-void LManager::UpdateOnEndPlay() const
+    void LManager::UpdateOnEndPlay(TSettings* settings) const
     {
         for (const auto &window : windows)
-            window->OnEndPlay();
+            window->OnEndPlay(settings);
     }
 
 #pragma endregion

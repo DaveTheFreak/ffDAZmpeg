@@ -13,9 +13,8 @@
 
 #include "Source/ffmpeg_execution.h"
 #include "Source/Manager/LManager.h"
-#include "Source/Manager/LSaveSystem.h"
-#include "Source/Types/Structs/FRuntimeValues.h"
-#include "Source/Types/Structs/FSavedValues.h"
+#include "Source/Windows/WAbout.h"
+#include "Source/Windows/WConversion.h"
 #include "Source/Windows/WSettings.h"
 
 // Boiler Plate --------------------------------------------------------------------------------------------------------
@@ -481,25 +480,24 @@ int main(int, char**)
 // Loop Setup ----------------------------------------------------------------------------------------------------------
 #pragma region LoopSetup
 
-    // Our state
+    /** Our state */
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     /** Initialize Values. */
-    FRuntimeValues* runtimeValues = new FRuntimeValues();
-    FSavedValues* savedValues = new FSavedValues();
-    *savedValues = LSaveSystem::loadSettings();
+    TSettings* globalSettings = new TSettings();
+    globalSettings->loadSettings();
 
     // Initialize Manager
     auto Manager = std::make_unique<LManager>();
 
     // Initialize Window
-    Manager->createWindow<WSettings>();
+    Manager->createWindow<WConversion>();
 
     /** Init ffmpeg execution struct. */
     ffmpeg_execution* ffmpeg_execution_ptr = new(ffmpeg_execution);
 
     // Call OnBeginPlay for all Windows
-    Manager->updateOnBeginPlay();
+    Manager->updateOnBeginPlay(globalSettings);
 
 #pragma endregion
 
@@ -544,31 +542,39 @@ int main(int, char**)
                                         ImGuiWindowFlags_NoResize |
                                         ImGuiWindowFlags_NoSavedSettings;
 
-        ImGui::Begin("ffDAZmpeg", nullptr, window_flags);
-        ImGui::BeginTabBar("Options");
-
-            if (ImGui::BeginTabItem("Folders"))
+        ImGui::BeginMainMenuBar();
+        {
+            if (ImGui::BeginMenu("Edit"))
             {
-                ImGui::Spacing();
-
-                // Paths - Input & Output ------------------------------------------------------------------------------
-                ImGui::Text(R"(Images must be in ".png" or ".tif" format.)");
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                ImGui::InputText("Daz Image(s) Input Path", savedValues->inputPath, IM_ARRAYSIZE(savedValues->inputPath));
-                    ImGui::SetItemTooltip(R"(Folder where the ".png" or ".tif" files from Daz are.)");
-                ImGui::Spacing();
-                ImGui::InputText("Daz Image(s) Output Path", savedValues->outputPath, IM_ARRAYSIZE(savedValues->outputPath));
-                    ImGui::SetItemTooltip("Save folder for converted files.");
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                // Content for Input
-                ImGui::EndTabItem();
+                if (ImGui::MenuItem("Conversion"))
+                {
+                    Manager->emptyManager();
+                    Manager->createWindow<WConversion>();
+                }
+                if (ImGui::MenuItem("Settings"))
+                {
+                    Manager->emptyManager();
+                    Manager->createWindow<WSettings>();
+                }
+                ImGui::Separator();
+                if (ImGui::MenuItem("Exit"))
+                {
+                    return 0;
+                }
+                ImGui::EndMenu();
             }
+            if (ImGui::BeginMenu("About"))
+            {
+                Manager->emptyManager();
+                Manager->createWindow<WAbout>();
+
+                ImGui::EndMenu();
+            }
+        }
+        ImGui::EndMainMenuBar();
+
+        /**
+
 
             if (ImGui::BeginTabItem("Format"))
             {
@@ -654,32 +660,6 @@ int main(int, char**)
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Effects"))
-            {
-                ImGui::Spacing();
-
-                ImGui::SliderFloat("Chromatic Aberration", &savedValues->chromaticAberrationIntensity, 0.0f, 0.01f, "%.4f");
-                    ImGui::SetItemTooltip(
-                        "Adds chromatic abberation at the borders to simulate a real lens.");
-                ImGui::Spacing();
-                ImGui::Checkbox("Enable Image Enhancement", &savedValues->enableImageEnhancement);
-                    ImGui::SetItemTooltip(
-                        "Reduces banding and adds micro detail for a better compression,\nbut loses minimal amount of detail.");
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                ImGui::InputText("Logo File Path", savedValues->logoPath, IM_ARRAYSIZE(savedValues->logoPath));
-                    ImGui::SetItemTooltip(
-                        "Leave empty for no logo.\nLogo must be \".png\" with alpha-channel.\nFile must have same aspect ratio as final image.\nLogo must be scaled and placed correctly.");
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                // Content for Input
-                ImGui::EndTabItem();
-            }
-
             if (ImGui::BeginTabItem("Conversion"))
             {
                 ImGui::Spacing();
@@ -707,7 +687,7 @@ int main(int, char**)
                     "Software",
                     "Vulkan"
                 };
-                const char* current_encoder_option = encoder_options[save.settings.selected_encoder_option];
+                const char* current_encoder_option = encoder_options[savedValues.settings.selected_encoder_option];
 
                 if (ImGui::BeginCombo("Encoder", current_encoder_option))
                 {
@@ -749,80 +729,10 @@ int main(int, char**)
                 ImGui::EndTabItem();
             }
 
-            if (ImGui::BeginTabItem("Settings"))
-            {
-                ImGui::Spacing();
-
-                // ffmpeg location -------------------------------------------------------------------------------------
-                ImGui::InputText("ffmpeg location", savedValues->ffmpegExecutablePath, IM_ARRAYSIZE(savedValues->ffmpegExecutablePath));
-                    ImGui::SetItemTooltip("File path to the executable, this program won't run without it.");
-
-                ImGui::Spacing();
-
-                ImGui::Checkbox("Enable ffmpeg Log", &savedValues->generateFfmpegLog);
-                    ImGui::SetItemTooltip("If enabled, will output the ffmpeg log to the output folder.");
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                if (ImGui::TreeNode("More Info"))
-                {
-                    ImGui::TextLinkOpenURL("Download ffmpeg", "https:/ffmpeg.org/download.html");
-                    ImGui::Spacing();
-                    ImGui::Text("Unpack somewhere, open the folder and locate the \"bin\" folder.");
-                    ImGui::Text("Copy past the path above.");
-
-                    ImGui::TreePop();
-                }
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                // Save settings ---------------------------------------------------------------------------------------
-                if (ImGui::Button("Revert Settings"))
-                {
-                    ImGui::OpenPopup("Revert Settings?");
-                }
-
-                    if (ImGui::BeginPopupModal("Revert Settings?", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-                    {
-                        ImGui::Text("Are you sure?");
-                        ImGui::Separator();
-
-                        if (ImGui::Button("Yes", ImVec2(120, 0)))
-                        {
-                            LSaveSystem::revertValues(*savedValues);
-                            ImGui::CloseCurrentPopup();
-                        }
-
-                        ImGui::SetItemDefaultFocus();
-                        ImGui::SameLine();
-
-                        if (ImGui::Button("No", ImVec2(120, 0)))
-                        {
-                            ImGui::CloseCurrentPopup();
-                        }
-
-                        ImGui::EndPopup();
-                    }
-
-                ImGui::SameLine();
-
-                if (ImGui::Button("Save Settings"))
-                {
-                    LSaveSystem::saveSettings(*savedValues);
-                }   ImGui::SetItemTooltip("Save current settings.");
-
-                // Content for Input
-                ImGui::EndTabItem();
-            }
-
-        ImGui::EndTabBar();
+        */
 
         // Update Windows
-        Manager->updateTick();
-
-        ImGui::End();
+        Manager->updateTick(globalSettings);
 
 #pragma endregion
 
@@ -850,10 +760,9 @@ int main(int, char**)
 #pragma region Cleanup
 
     delete ffmpeg_execution_ptr;
-    delete runtimeValues;
-    delete savedValues;
+    delete globalSettings;
 
-    Manager->UpdateOnEndPlay();
+    Manager->UpdateOnEndPlay(globalSettings);
     Manager->emptyManager();
 
     #pragma region CleanupUI

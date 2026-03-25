@@ -3,7 +3,7 @@
 #pragma once
 
 /** Values and Settings for the current runtime only. */
-struct FRuntimeValues
+struct TRuntimeValues
 {
     // VARIABLES ===========================================================================================================
 #pragma region Variables

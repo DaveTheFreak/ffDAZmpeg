@@ -8,28 +8,30 @@
 
 class WSettings : public LWindow
 {
-    WSettings() = default;
-
 // VIRTUAL FUNCTIONS ===================================================================================================
 #pragma region VirtualFunctions
 public:
 
-    void Tick() override
+    void Tick(TSettings* settings) override
     {
-        ImGui::Begin("Settings");
+        ImGui::Begin("Settings", nullptr, getWindowFlags());
 
         ImGui::Spacing();
+        ImGui::SeparatorText("SETTINGS");
 
-        // ffmpeg location -------------------------------------------------------------------------------------
-        ImGui::InputText("ffmpeg location", save.settings.ffmpeg_path, IM_ARRAYSIZE(save.settings.ffmpeg_path));
+        // -------------------------------------------------------------------------------------------------------------
+        ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+
+        // ffmpeg location ---------------------------------------------------------------------------------------------
+        ImGui::InputText("ffmpeg location", settings->savedValues.ffmpegExecutablePath, IM_ARRAYSIZE(settings->savedValues.ffmpegExecutablePath));
             ImGui::SetItemTooltip("File path to the executable, this program won't run without it.");
 
         ImGui::Spacing();
 
-        ImGui::Checkbox("Enable ffmpeg Log", &save.settings.generate_ffmpeg_log);
+        ImGui::Checkbox("Enable ffmpeg Log", &settings->savedValues.generateFfmpegLog);
             ImGui::SetItemTooltip("If enabled, will output the ffmpeg log to the output folder.");
 
-        // -----------------------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------------------------------
         ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
         if (ImGui::TreeNode("More Info"))
@@ -42,10 +44,10 @@ public:
             ImGui::TreePop();
         }
 
-        // -----------------------------------------------------------------------------------------------------
+        // -------------------------------------------------------------------------------------------------------------
         ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
 
-        // Save settings ---------------------------------------------------------------------------------------
+        // Save settings -----------------------------------------------------------------------------------------------
         if (ImGui::Button("Revert Settings"))
         {
             ImGui::OpenPopup("Revert Settings?");
@@ -58,7 +60,7 @@ public:
 
                 if (ImGui::Button("Yes", ImVec2(120, 0)))
                 {
-                    save.revert_settings();
+                    settings->saveSettings();
                     ImGui::CloseCurrentPopup();
                 }
 
@@ -77,8 +79,8 @@ public:
 
         if (ImGui::Button("Save Settings"))
         {
-            save.save_settings();
-        }   ImGui::SetItemTooltip("Save current settings.");
+            settings->saveSettings();
+        }   ImGui::SetItemTooltip("Save current settings->");
 
         ImGui::End();
     }

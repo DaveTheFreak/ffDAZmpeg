@@ -66,9 +66,9 @@ public:
 
     void emptyManager();
 
-    void updateOnBeginPlay() const;
-    void updateTick() const;
-    void UpdateOnEndPlay() const;
+    void updateOnBeginPlay(TSettings* settings) const;
+    void updateTick(TSettings* settings) const;
+    void UpdateOnEndPlay(TSettings* settings) const;
 
 #pragma endregion
 
