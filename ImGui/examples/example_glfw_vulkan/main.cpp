@@ -493,9 +493,6 @@ int main(int, char**)
     // Initialize Window
     Manager->createWindow<WConversion>();
 
-    /** Init ffmpeg execution struct. */
-    ffmpeg_execution* ffmpeg_execution_ptr = new(ffmpeg_execution);
-
     // Call OnBeginPlay for all Windows
     Manager->updateOnBeginPlay(globalSettings);
 
@@ -573,164 +570,6 @@ int main(int, char**)
         }
         ImGui::EndMainMenuBar();
 
-        /**
-
-
-            if (ImGui::BeginTabItem("Format"))
-            {
-                ImGui::Spacing();
-
-                // Format ----------------------------------------------------------------------------------------------
-                static const char* image_formats[] = { "AVIF", "HEIC", "JPEG XL", "JPEG" };
-                const char* current_image_format = image_formats[save.settings.selected_image_format];
-
-                if (ImGui::BeginCombo("Format", current_image_format))
-                {
-                    for (int8_t n = 0; n < IM_ARRAYSIZE(image_formats); n++)
-                    {
-                        bool is_selected = (save.settings.selected_image_format == n);
-
-                        if (ImGui::Selectable(image_formats[n], is_selected))
-                            save.settings.selected_image_format = n;
-
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }   ImGui::SetItemTooltip("Currently only AVIF is being supported.");
-
-                save.settings.selected_image_format = 0; // TODO: currently only AVIF supported!
-
-                ImGui::Spacing();
-
-                // Dynamic Range ---------------------------------------------------------------------------------------
-                static const char* dynamic_ranges[] = { "SDR", "HDR", };
-                const char* current_dynamic_range = dynamic_ranges[save.settings.selected_dynamic_range];
-
-                if (ImGui::BeginCombo("Dynamic Range", current_dynamic_range))
-                {
-                    for (int8_t n = 0; n < IM_ARRAYSIZE(dynamic_ranges); n++)
-                    {
-                        bool is_selected = (save.settings.selected_dynamic_range == n);
-
-                        if (ImGui::Selectable(dynamic_ranges[n], is_selected))
-                            save.settings.selected_dynamic_range = n;
-
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }   ImGui::SetItemTooltip("HDR requires capable image viewers that support HDR PQ.");
-
-                ImGui::Spacing();
-
-                // Bit depth -------------------------------------------------------------------------------------------
-                static const char* bit_depths[] = { "8", "10", };
-                const char* current_bit_depth = bit_depths[save.settings.selected_bit_depth_index];
-
-                if (ImGui::BeginCombo("Bit Depth", current_bit_depth))
-                {
-                    for (int8_t n = 0; n < IM_ARRAYSIZE(bit_depths); n++)
-                    {
-                        bool is_selected = (save.settings.selected_bit_depth_index == n);
-
-                        if (ImGui::Selectable(bit_depths[n], is_selected))
-                            save.settings.selected_bit_depth_index = n;
-
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-
-                // HDR = always 10 bit
-                if (savedValues->selectedDynamicRangeMode == EEncodingDynamicRangeModes::HDR)
-                    savedValues->selectedBitDepth = 10;
-                // JPG = always 8 bit and SDR
-                if (savedValues->selectedImageFormat == EEncodingImageFormats::jpg)
-                {
-                    savedValues->selectedBitDepth = 8;
-                    savedValues->selectedDynamicRangeMode = EEncodingDynamicRangeModes::SDR;
-                }
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                // Content for Input
-                ImGui::EndTabItem();
-            }
-
-            if (ImGui::BeginTabItem("Conversion"))
-            {
-                ImGui::Spacing();
-
-                // Encoder ---------------------------------------------------------------------------------------------
-                auto get_hardware_accelleration = []() -> const char*
-                {
-                    VkPhysicalDeviceProperties properties;
-                    vkGetPhysicalDeviceProperties(g_PhysicalDevice, &properties);
-
-                    switch (properties.vendorID)
-                    {
-                        case 0x10DE: return "NVENC (NVidia)";
-                        case 0x1002: return "VCN/VCE (AMD)";
-                        case 0x8086: return "QSV (Intel)";
-                        case 0x13B5: return "VPU (Arm)";
-                        default: return nullptr;
-                    }
-                };
-
-                static const bool hardware_acceleration_found = get_hardware_accelleration() != nullptr;
-
-                static const char* encoder_options[] = {
-                    hardware_acceleration_found ? get_hardware_accelleration() : "unknown vendor",
-                    "Software",
-                    "Vulkan"
-                };
-                const char* current_encoder_option = encoder_options[savedValues.settings.selected_encoder_option];
-
-                if (ImGui::BeginCombo("Encoder", current_encoder_option))
-                {
-                    for (int8_t n = 0; n < IM_ARRAYSIZE(encoder_options); n++)
-                    {
-                        bool is_selected = (save.settings.selected_encoder_option == n);
-
-                        if (ImGui::Selectable(encoder_options[n], is_selected))
-                            save.settings.selected_encoder_option = n;
-
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-                    ImGui::EndCombo();
-                }
-
-                // Unknown -> select software encoder
-                if (!hardware_acceleration_found && save.settings.selected_encoder_option == 0)
-                    save.settings.selected_encoder_option = 1;
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                // Convert ---------------------------------------------------------------------------------------------
-                static float progress_bar_progress {0.0f};
-                if (ImGui::Button("START CONVERSION"))
-                {
-                    ffmpeg_execution_ptr->Run(*savedValues);
-                }   ImGui::SetItemTooltip("Start converting the images.");
-
-                // Progress Bar ----------------------------------------------------------------------------------------
-                ImGui::SameLine();
-                ImGui::ProgressBar(runtimeValues->conversionProgress);
-
-                // -----------------------------------------------------------------------------------------------------
-                ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
-
-                // Content for Input
-                ImGui::EndTabItem();
-            }
-
-        */
-
         // Update Windows
         Manager->updateTick(globalSettings);
 
@@ -759,7 +598,6 @@ int main(int, char**)
 // Cleanup -------------------------------------------------------------------------------------------------------------
 #pragma region Cleanup
 
-    delete ffmpeg_execution_ptr;
     delete globalSettings;
 
     Manager->UpdateOnEndPlay(globalSettings);

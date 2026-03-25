@@ -8,7 +8,21 @@
 
 class WConversion : public LWindow
 {
-// VIRTUAL FUNCTIONS ===================================================================================================
+public:
+
+    WConversion()
+    {
+        ffmpegExecutionPtr = new ffmpeg_execution();
+    }
+
+    ~WConversion() override
+    {
+        delete ffmpegExecutionPtr;
+        ffmpegExecutionPtr = nullptr;
+    }
+
+private:
+    // VIRTUAL FUNCTIONS ===================================================================================================
 #pragma region VirtualFunctions
 public:
 
@@ -121,18 +135,19 @@ public:
 
                 if (ImGui::BeginCombo("Dynamic Range", dynamicRangesAvailable[currentRangesIndex]))
                 {
-                    for (int n = 0; n < IM_ARRAYSIZE(imageFormatsAvailable); n++)
+                    for (int n = 0; n < IM_ARRAYSIZE(dynamicRangesAvailable); n++)
                     {
                         bool isSelected = (currentRangesIndex == n);
 
-                        if (ImGui::Selectable(imageFormatsAvailable[n], isSelected))
-                            settings->savedValues.selectedImageFormat = static_cast<EEncodingImageFormats>(n);
+                        if (ImGui::Selectable(dynamicRangesAvailable[n], isSelected))
+                            settings->savedValues.selectedDynamicRangeMode = static_cast<EEncodingDynamicRangeModes>(n);
 
                         if (isSelected)
                             ImGui::SetItemDefaultFocus();
                     }
                     ImGui::EndCombo();
-                }   ImGui::SetItemTooltip("HDR requires capable image viewers that support HDR PQ.");
+                }
+                ImGui::SetItemTooltip("HDR requires capable image viewers that support HDR PQ.");
 
                 ImGui::Spacing();
 
@@ -175,8 +190,45 @@ public:
                 }
 
             ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
+
+                // Encoder ---------------------------------------------------------------------------------------------
+
+                static const char* encoderOptions[] = { "Auto", "Vulkan", "Software"};
+                uint8_t currentEncoderIndex = static_cast<uint8_t>(settings->savedValues.selectEncodingAcceleration);
+
+                if (ImGui::BeginCombo("Encoder", encoderOptions[currentEncoderIndex]))
+                {
+                    for (int n = 0; n < IM_ARRAYSIZE(encoderOptions); n++)
+                    {
+                        bool isSelected = (currentEncoderIndex == n);
+
+                        if (ImGui::Selectable(encoderOptions[n], isSelected))
+                            settings->savedValues.selectEncodingAcceleration = static_cast<EEncodingAcceleration>(n);
+
+                        if (isSelected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::SetItemTooltip("Auto will select vendor specific options automatically.");
+
+            ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
             ImGui::Unindent();
         }
+
+        // CONVERT -----------------------------------------------------------------------------------------------------
+            ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
+
+            if (ImGui::Button("START CONVERSION"))
+            {
+                ffmpegExecutionPtr->Run(settings);
+            }   ImGui::SetItemTooltip("Start converting the images.");
+
+            // Progress Bar --------------------------------------------------------------------------------------------
+            ImGui::SameLine();
+            ImGui::ProgressBar(settings->runtimeValues.conversionProgress);
+
+            ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
 
         ImGui::End();
     }
@@ -193,7 +245,7 @@ public:
 // VARIABLES ===========================================================================================================
 #pragma region Variables
 
-    // ...
+    ffmpeg_execution* ffmpegExecutionPtr {nullptr};
 
 #pragma endregion
 
