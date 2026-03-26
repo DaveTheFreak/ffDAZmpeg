@@ -171,7 +171,7 @@ public:
                     // JPG = always 8 bit and SDR
                     if (settings->savedValues.selectedImageFormat == EEncodingImageFormats::Type::jpg)
                     {
-                        settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x10;
+                        settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x8;
                         settings->savedValues.selectedDynamicRangeMode = EEncodingDynamicRangeModes::Type::SDR;
                     }
 

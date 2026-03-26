@@ -17,9 +17,9 @@ struct TSavedValues
 #pragma region VariablesFolders
 
     char inputPath[512] =
-        R"(C:\Users\DaveTheFreak\Nextcloud\MEDIA\NRPV\NRP-DaveLaMuerta\NRPDLM-2D\_WIP)";
+        R"(C:\Users\DaveTheFreak\Desktop\DAZ)";
     char outputPath[512] =
-        R"(C:\Users\DaveTheFreak\Nextcloud\MEDIA\NRPV\NRP-DaveLaMuerta\NRPDLM-2D\_WIP)";
+        R"(C:\Users\DaveTheFreak\Desktop\DAZ)";
 
 #pragma endregion
 
@@ -41,7 +41,7 @@ struct TSavedValues
 #pragma region VariablesEffects
 
     /** Simulated lens-based chromatic aberration intensity (0.0f = off). */
-    float chromaticAberrationIntensity {0.002f};
+    float chromaticAberrationIntensity {0.0021f};
 
     /** Reduces dithering, adds microdetail and improves encoding. */
     bool enableImageEnhancement {true};

@@ -25,7 +25,7 @@ struct ffmpeg_execution
         std::filesystem::path input_file =
             std::filesystem::path(settings->savedValues.inputPath) / current_filename;
 
-        // Output format (.png or .tif) -------------------------------------------------------------------------------
+        // Output format (.avif or .jpg) -------------------------------------------------------------------------------
 
         std::filesystem::path output_file =
             std::filesystem::path(settings->savedValues.outputPath) / std::filesystem::path(current_filename).stem();
@@ -187,6 +187,9 @@ struct ffmpeg_execution
             }
             case EEncodingImageFormats::Type::jpg: // JPEG
             {
+                encoding = "-c:v mjpeg -qmin 1 -qmax 1 -q:v 1 -pix_fmt yuvj444p";
+                dynamic_range_params =
+                    "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
                 break;
             }
         }
