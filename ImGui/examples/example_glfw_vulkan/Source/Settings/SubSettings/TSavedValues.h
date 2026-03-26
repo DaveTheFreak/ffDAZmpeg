@@ -49,6 +49,9 @@ struct TSavedValues
     /** HDR mapping curve for various brightness levels. */
     float hdrCurve[5] = {0.f, -0.02f, -0.04f, -0.06f, 0.f};
 
+    /** Image saturation. */
+    float hdrSaturation {0.85f};
+
     /** Optional: A logo to be put on top of the actual image, scales with its size, must have same aspect-ratio. */
     char logoPath[512] =
         R"(C:\Users\DaveTheFreak\Nextcloud\TOOLS\CGI\Daz3D\TEXTURES\DaveLaMuertaLogo.png)";

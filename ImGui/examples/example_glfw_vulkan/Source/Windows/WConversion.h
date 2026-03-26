@@ -125,6 +125,11 @@ public:
                 ImGui::Unindent();
             }
 
+            ImGui::Spacing(); // ---------------------------------------------------------------------------------------
+
+            ImGui::SliderFloat("HDR Saturation", &settings->savedValues.hdrSaturation, 0.f, 1.f);
+            ImGui::SetItemTooltip("Saturation for HDR PQ images, because they may be too vibrant by default.");
+
             ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
 
             // Logo file path. -----------------------------------------------------------------------------------------

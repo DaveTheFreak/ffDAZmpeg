@@ -80,6 +80,7 @@ struct ffmpeg_execution
         std::string dynamic_range_params;
         std::string hw_upload;
         std::string hw_init;
+
         std::string hdr_curve = std::format("0/{} 0.1/{} 0.5/{} 0.8/{} 1/{}",
             0.0f + settings->savedValues.hdrCurve[0],
             0.1f + settings->savedValues.hdrCurve[1],
@@ -87,7 +88,13 @@ struct ffmpeg_execution
             0.8f + settings->savedValues.hdrCurve[3],
             1.0f + settings->savedValues.hdrCurve[4]);
 
-        std::string hdr_desaturation {"colorchannelmixer=rr=0.90:rg=0.05:rb=0.05:gr=0.05:gg=0.90:gb=0.05:br=0.05:bg=0.05:bb=0.90,"};
+        float primary = 1.0f / 3.0f + (2.0f / 3.0f) * settings->savedValues.hdrSaturation;
+        float secondary = 1.0f / 3.0f - (1.0f / 3.0f) * settings->savedValues.hdrSaturation;
+        std::string hdr_desaturation = std::format(
+            "colorchannelmixer=rr={0:.2f}:rg={1:.2f}:rb={1:.2f}:"
+            "gr={1:.2f}:gg={0:.2f}:gb={1:.2f}:"
+            "br={1:.2f}:bg={1:.2f}:bb={0:.2f},",
+            primary, secondary);
 
         switch (settings->savedValues.selectedImageFormat)
         {
