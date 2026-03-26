@@ -182,7 +182,9 @@
     <ClInclude Include="..\..\backends\imgui_impl_glfw.h" />
     <ClInclude Include="..\..\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="Source\ffd.h" />
-    <ClInclude Include="Source\ffmpeg_execution.h" />
+    <ClInclude Include="Source\ffd\conversion_effects.h" />
+    <ClInclude Include="Source\ffd\parameters.h" />
+    <ClInclude Include="Source\FfmpegExecution.h" />
     <ClInclude Include="Source\LWindow.h" />
     <ClInclude Include="Source\Manager\LManager.h" />
     <ClInclude Include="Source\Settings\SubSettings\TRuntimeValues.h" />

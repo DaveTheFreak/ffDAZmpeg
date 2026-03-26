@@ -13,7 +13,7 @@ public:
 
     WConversion()
     {
-        ffmpegExecutionPtr = new ffmpeg_execution();
+        ffmpegExecutionPtr = new FfmpegExecution();
     }
 
     ~WConversion() override
@@ -98,23 +98,23 @@ public:
             {
                 ImGui::Indent();
 
-                static constexpr ImVec2 HDR_CURVE_VEC2 = {80.f, 300.f};
-                static constexpr float HDR_CURVE_MIN = -0.25f;
-                static constexpr float HDR_CURVE_MAX = 0.25f;
+                static constexpr ImVec2 HDR_CURVE_VEC2 = {80.f, 500.f};
+                static constexpr float HDR_CURVE_MIN = -0.5f;
+                static constexpr float HDR_CURVE_MAX = 0.5f;
 
-                ImGui::VSliderFloat("0.0", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[0], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::VSliderFloat("0.0", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[0], HDR_CURVE_MIN, HDR_CURVE_MAX, "%.2f");
                 ImGui::SameLine(0, 20.f);
 
-                ImGui::VSliderFloat("0.1", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[1], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::VSliderFloat("0.1", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[1], HDR_CURVE_MIN, HDR_CURVE_MAX, "%.2f");
                 ImGui::SameLine(0, 20.f);
 
-                ImGui::VSliderFloat("0.5", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[2], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::VSliderFloat("0.5", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[2], HDR_CURVE_MIN, HDR_CURVE_MAX, "%.2f");
                 ImGui::SameLine(0, 20.f);
 
-                ImGui::VSliderFloat("0.8", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[3], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::VSliderFloat("0.8", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[3], HDR_CURVE_MIN, HDR_CURVE_MAX, "%.2f");
                 ImGui::SameLine(0, 20.f);
 
-                ImGui::VSliderFloat("1.0", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[4], HDR_CURVE_MIN, HDR_CURVE_MAX);
+                ImGui::VSliderFloat("1.0", HDR_CURVE_VEC2, &settings->savedValues.hdrCurve[4], HDR_CURVE_MIN, HDR_CURVE_MAX, "%.2f");
 
                 settings->savedValues.hdrCurve[0] = std::clamp(settings->savedValues.hdrCurve[0], 0.0f, 1.0f);
                 settings->savedValues.hdrCurve[1] = std::clamp(settings->savedValues.hdrCurve[1], -0.1f, 0.9f);
@@ -193,7 +193,7 @@ public:
             {
                 if (ImGui::Button("CANCEL CONVERSION"))
                 {
-                    ffmpegExecutionPtr->Run(settings);
+
                 }   ImGui::SetItemTooltip("Cancel the conversion.");
             }
             else
@@ -225,7 +225,7 @@ public:
 // VARIABLES ===========================================================================================================
 #pragma region Variables
 
-    ffmpeg_execution* ffmpegExecutionPtr {nullptr};
+    FfmpegExecution* ffmpegExecutionPtr {nullptr};
 
 #pragma endregion
 

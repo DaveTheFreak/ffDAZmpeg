@@ -1,23 +1,30 @@
 ﻿#pragma once
 
+#include <filesystem>
 #include <vulkan/vulkan_core.h>
+
+#include "ffd/conversion_effects.h"
+#include "ffd/parameters.h"
 
 #include "imgui_impl_vulkan.h"
 
 namespace ffd
 {
-    static VkAllocationCallbacks*   g_Allocator = nullptr;
-    static VkInstance               g_Instance = VK_NULL_HANDLE;
-    static VkPhysicalDevice         g_PhysicalDevice = VK_NULL_HANDLE;
-    static VkDevice                 g_Device = VK_NULL_HANDLE;
-    static uint32_t                 g_QueueFamily = (uint32_t)-1;
-    static VkQueue                  g_Queue = VK_NULL_HANDLE;
-    static VkPipelineCache          g_PipelineCache = VK_NULL_HANDLE;
-    static VkDescriptorPool         g_DescriptorPool = VK_NULL_HANDLE;
+    namespace g_variables
+    {
+        static VkAllocationCallbacks*   g_Allocator = nullptr;
+        static VkInstance               g_Instance = VK_NULL_HANDLE;
+        static VkPhysicalDevice         g_PhysicalDevice = VK_NULL_HANDLE;
+        static VkDevice                 g_Device = VK_NULL_HANDLE;
+        static uint32_t                 g_QueueFamily = (uint32_t)-1;
+        static VkQueue                  g_Queue = VK_NULL_HANDLE;
+        static VkPipelineCache          g_PipelineCache = VK_NULL_HANDLE;
+        static VkDescriptorPool         g_DescriptorPool = VK_NULL_HANDLE;
 
-    static ImGui_ImplVulkanH_Window g_MainWindowData;
-    static uint32_t                 g_MinImageCount = 2;
-    static bool                     g_SwapChainRebuild = false;
+        static ImGui_ImplVulkanH_Window g_MainWindowData;
+        static uint32_t                 g_MinImageCount = 2;
+        static bool                     g_SwapChainRebuild = false;
+    }
 
     /** Create a simple drop-down menu. */
     namespace drop_down
