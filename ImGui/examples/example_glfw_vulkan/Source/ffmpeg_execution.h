@@ -282,10 +282,33 @@ struct ffmpeg_execution
     /** Run the conversions. */
     void Run(TSettings* settings)
     {
-        std::thread([this, settings]()
+std::thread([this, settings]()
         {
+            settings->runtimeValues.isConverting = true;
+            settings->runtimeValues.conversionProgress = 0.0f;
+
             std::string local_ffmpeg_path = std::string(settings->savedValues.ffmpegExecutablePath) + "\\ffmpeg.exe";
 
+            // 1. Count total files to calculate progress
+            int total_files = 0;
+            for (const auto& entry : std::filesystem::directory_iterator(settings->savedValues.inputPath))
+            {
+                if (entry.is_regular_file() &&
+                   (entry.path().extension() == ".png" || entry.path().extension() == ".tif"))
+                {
+                    total_files++;
+                }
+            }
+
+            if (total_files == 0)
+            {
+                settings->runtimeValues.conversionProgress = 1.0f;
+                settings->runtimeValues.isConverting = false;
+                return;
+            }
+
+            // 2. Process files
+            int processed_files = 0;
             for (const auto& entry : std::filesystem::directory_iterator(settings->savedValues.inputPath))
             {
                 if (entry.is_regular_file()
@@ -330,8 +353,16 @@ struct ffmpeg_execution
                     }
 
                     if (hLogFile) CloseHandle(hLogFile);
+
+                    // 3. Update progress after each file completes
+                    processed_files++;
+                    settings->runtimeValues.conversionProgress = static_cast<float>(processed_files) / static_cast<float>(total_files);
                 }
             }
+
+            // 4. Mark conversion as finished
+            settings->runtimeValues.isConverting = false;
+
         }).detach();
     }
 
