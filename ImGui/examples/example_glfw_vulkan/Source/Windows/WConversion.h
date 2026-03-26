@@ -189,10 +189,20 @@ public:
         // CONVERT -----------------------------------------------------------------------------------------------------
             ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
 
-            if (ImGui::Button("START CONVERSION"))
+            if (settings->runtimeValues.isConverting)
             {
-                ffmpegExecutionPtr->Run(settings);
-            }   ImGui::SetItemTooltip("Start converting the images.");
+                if (ImGui::Button("CANCEL CONVERSION"))
+                {
+                    ffmpegExecutionPtr->Run(settings);
+                }   ImGui::SetItemTooltip("Cancel the conversion.");
+            }
+            else
+            {
+                if (ImGui::Button("START CONVERSION"))
+                {
+                    ffmpegExecutionPtr->Run(settings);
+                }   ImGui::SetItemTooltip("Start converting the images.");
+            }
 
             // Progress Bar --------------------------------------------------------------------------------------------
             ImGui::SameLine();
