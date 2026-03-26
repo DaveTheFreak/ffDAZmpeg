@@ -38,18 +38,25 @@ struct ffmpeg_execution
 
         // Effects -----------------------------------------------------------------------------------------------------
 
-        std::string chromatic_aberration_intensity = std::to_string(settings->savedValues.chromaticAberrationIntensity);
+        std::string ca_logic = "[0:v]zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=gbrp16le";
 
-        std::string ca_logic =
-            "[0:v]zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=gbrp16le,extractplanes=r+g+b[r][g][b];";
-        ca_logic +=
-            "[r]lenscorrection=k1=" + chromatic_aberration_intensity + ":k2=0[r_dist];";
-        ca_logic +=
-            "[b]lenscorrection=k1=-" + chromatic_aberration_intensity + ":k2=0[b_dist];";
-        ca_logic +=
-            "[g][b_dist][r_dist]mergeplanes=format=gbrp16le:map0s=0:map0p=0:map1s=1:map1p=0:map2s=2:map2p=0,";
-        ca_logic +=
-            "zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,crop=iw*0.995:ih*0.995,format=rgba64le";
+        if (settings->savedValues.chromaticAberrationIntensity > 0.0f)
+        {
+            std::string chromatic_aberration_intensity = std::to_string(settings->savedValues.chromaticAberrationIntensity);
+
+            ca_logic += ",extractplanes=r+g+b[r][g][b];";
+            ca_logic += "[r]lenscorrection=k1=" + chromatic_aberration_intensity + ":k2=0[r_dist];";
+            ca_logic += "[b]lenscorrection=k1=-" + chromatic_aberration_intensity + ":k2=0[b_dist];";
+            ca_logic += "[g][b_dist][r_dist]mergeplanes=format=gbrp16le:map0s=0:map0p=0:map1s=1:map1p=0:map2s=2:map2p=0,";
+
+            // Crop out artifacts and scale back to the original resolution (round() prevents 1px deviations)
+            ca_logic += "crop=iw*0.995:ih*0.995,zscale=w=round(iw/0.995):h=round(ih/0.995):rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=rgba64le";
+        }
+        else
+        {
+            // Skip CA processing and cropping entirely if intensity is 0.0
+            ca_logic += ",zscale=rin=1:r=1:tin=iec61966-2-1:t=iec61966-2-1,format=rgba64le";
+        }
 
         // Logo Overlay
         std::string filter_chain;
