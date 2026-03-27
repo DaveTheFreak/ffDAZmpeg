@@ -8,16 +8,16 @@ It can save 8 or 10 bit images, either SDR Rec709 or HDR PQ.
 
 * a simple UI
 * supported input formats
-  * .png
-  * .tif
+  * PNG (.png)
+  * TIF (.tif)
 * supported output formats
-  * .avif
+  * AVIF (.avif)
     * bit Depths: 8 bit SDR, 8 + 10 bit HDR
     * encoders: NVENC, Vulkan & Software
-  * .jpeg xl
+  * JPEG XL (.jxl)
     * bit Depths: 8 bit SDR, 8 + 10 bit HDR
     * encoder: Software
-  * jpeg
+  * JPEG (.jpg)
     * bit Depths: 8 bit SDR
     * encoder: Software
 * effects
