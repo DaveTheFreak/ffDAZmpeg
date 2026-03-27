@@ -7,16 +7,16 @@ struct EEncodingAcceleration
 {
     enum class Type : uint8_t
     {
-        Auto,       // Vendor specific encoder like NVENC for NVidia.
         Vulkan,     // Vulkan encoding for all GPUs.
+        Auto,       // Vendor specific encoder like NVENC for NVidia.
         Software,   // Software encoding using the CPU.
         COUNT
     };
 
     static constexpr const char* ComboBoxTile = "Encoder";
     static constexpr const char* NamesArray[static_cast<size_t>(Type::COUNT)] = {
-        "Auto",
         "Vulkan",
+        "Auto",
         "Software"
     };
 };

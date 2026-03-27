@@ -151,36 +151,44 @@ public:
 
                 // Format ----------------------------------------------------------------------------------------------
                 ffd::drop_down::draw_enum<EEncodingImageFormats>(settings->savedValues.selectedImageFormat);
-                ImGui::SetItemTooltip("Only avif is currently working.");
+                ImGui::SetItemTooltip("Choose the output format.");
 
                 ImGui::Spacing();
 
                 // Dynamic Range ---------------------------------------------------------------------------------------
-                ffd::drop_down::draw_enum<EEncodingDynamicRangeModes>(settings->savedValues.selectedDynamicRangeMode);
-                ImGui::SetItemTooltip("HDR requires capable image viewers that support HDR PQ.");
+                if (settings->savedValues.selectedImageFormat != EEncodingImageFormats::Type::jpg)
+                {
+                    ffd::drop_down::draw_enum<EEncodingDynamicRangeModes>(settings->savedValues.selectedDynamicRangeMode);
+                    ImGui::SetItemTooltip("HDR requires capable image viewers that support HDR PQ.");
 
-                ImGui::Spacing();
+                    ImGui::Spacing();
+                }
 
                 // Bit depth -------------------------------------------------------------------------------------------
-                ffd::drop_down::draw_enum<EEncodingBitDepth>(settings->savedValues.selectedBitDepth);
-                ImGui::SetItemTooltip("Note: JPEG does not support 10 bits.");
+                if (settings->savedValues.selectedImageFormat != EEncodingImageFormats::Type::jpg
+                    && settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::SDR)
+                {
+                    ffd::drop_down::draw_enum<EEncodingBitDepth>(settings->savedValues.selectedBitDepth);
+                    ImGui::SetItemTooltip("10 bit will reduce banding, but may not be properly displayed on all devices.");
+                }
 
-                    // HDR = always 10 bit
-                    if (settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::HDR)
-                        settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x10;
-                    // JPG = always 8 bit and SDR
-                    if (settings->savedValues.selectedImageFormat == EEncodingImageFormats::Type::jpg)
-                    {
-                        settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x8;
-                        settings->savedValues.selectedDynamicRangeMode = EEncodingDynamicRangeModes::Type::SDR;
-                    }
-
-            ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
+                // HDR = always 10 bit
+                if (settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::HDR)
+                    settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x10;
+                // JPG = always 8 bit and SDR
+                if (settings->savedValues.selectedImageFormat == EEncodingImageFormats::Type::jpg)
+                {
+                    settings->savedValues.selectedBitDepth = EEncodingBitDepth::Type::x8;
+                    settings->savedValues.selectedDynamicRangeMode = EEncodingDynamicRangeModes::Type::SDR;
+                }
 
                 // Encoder ---------------------------------------------------------------------------------------------
-
-                ffd::drop_down::draw_enum<EEncodingAcceleration>(settings->savedValues.selectEncodingAcceleration);
-                ImGui::SetItemTooltip("Auto will select vendor specific options automatically.");
+                if (settings->savedValues.selectedImageFormat == EEncodingImageFormats::Type::avif)
+                {
+                    ImGui::Spacing();
+                    ffd::drop_down::draw_enum<EEncodingAcceleration>(settings->savedValues.selectEncodingAcceleration);
+                    ImGui::SetItemTooltip("Auto will select vendor specific options automatically.");
+                }
 
             ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing(); // -------------------------------------------------
             ImGui::Unindent();
