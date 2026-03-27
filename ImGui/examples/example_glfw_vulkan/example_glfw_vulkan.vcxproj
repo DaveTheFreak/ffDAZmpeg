@@ -182,6 +182,7 @@
     <ClInclude Include="..\..\backends\imgui_impl_glfw.h" />
     <ClInclude Include="..\..\backends\imgui_impl_vulkan.h" />
     <ClInclude Include="Source\ffd.h" />
+    <ClInclude Include="Source\ffd\conversion.h" />
     <ClInclude Include="Source\ffd\conversion_effects.h" />
     <ClInclude Include="Source\ffd\parameters.h" />
     <ClInclude Include="Source\FfmpegExecution.h" />

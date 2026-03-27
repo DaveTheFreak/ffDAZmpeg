@@ -5,6 +5,7 @@
 
 #include "ffd/conversion_effects.h"
 #include "ffd/parameters.h"
+#include "ffd/conversion.h"
 
 #include "imgui_impl_vulkan.h"
 

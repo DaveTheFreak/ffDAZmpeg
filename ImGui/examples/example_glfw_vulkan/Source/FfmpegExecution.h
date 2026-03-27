@@ -138,38 +138,16 @@ struct FfmpegExecution
                 }
                 break;
             }
+            // JPEG XL -------------------------------------------------------------------------------------------------
             case EEncodingImageFormats::Type::jxl:
             {
-                // FFmpeg does not support hardware-accelerated JXL encoding.
-                // All acceleration options fall back to the software libjxl encoder.
-                std::string pix_fmt = (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8) ? "yuv444p" : "yuv444p10le";
-
-                ffd::parameters::encoding = "-c:v libjxl -distance 1 -effort 7 -pix_fmt " + pix_fmt;
-
-                if (settings->savedValues.selectedBitDepth == EEncodingBitDepth::Type::x8 || settings->savedValues.selectedDynamicRangeMode == EEncodingDynamicRangeModes::Type::SDR) // SDR
-                {
-                    ffd::parameters::dynamicRangeParams =
-                        "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
-                }
-                else // HDR
-                {
-                    ffd::parameters::filterChain +=
-                        ",format=gbrp16le,curves=all='" + ffd::parameters::hdrCurve + "',";
-                    ffd::parameters::filterChain += ffd::parameters::hdrDesaturation;
-                    ffd::parameters::filterChain +=
-                        "zscale=pin=1:rin=1:tin=iec61966-2-1:p=9:m=9:r=0:t=16:npl=1000";
-
-                    ffd::parameters::dynamicRangeParams =
-                        "-color_range tv -colorspace bt2020nc -color_primaries bt2020 -color_trc smpte2084 ";
-                    // JXL does not require a bitstream filter (-bsf:v) for HDR metadata.
-                }
+                ffd::conversion::jxl::Encode(settings);
                 break;
             }
-            case EEncodingImageFormats::Type::jpg: // JPEG
+            // JPEG ----------------------------------------------------------------------------------------------------
+            case EEncodingImageFormats::Type::jpg:
             {
-                ffd::parameters::encoding = "-c:v mjpeg -qmin 1 -qmax 1 -q:v 1 -pix_fmt yuvj444p";
-                ffd::parameters::dynamicRangeParams =
-                    "-color_range pc -colorspace bt709 -color_primaries bt709 -color_trc iec61966-2-1";
+                ffd::conversion::jpg::Encode();
                 break;
             }
         }

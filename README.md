@@ -18,3 +18,4 @@ ffDAZmpeg uses:
 
 * ffmpeg (download separately): https://ffmpeg.org/download.html
 * Dear ImGui (GLFW Vulkan): https://github.com/ocornut/imgui
+
