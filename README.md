@@ -7,9 +7,26 @@ It can save 8 or 10 bit images, either SDR Rec709 or HDR PQ.
 # Current Features
 
 * a simple UI
-* .png and .tif files can be converted to avif using nvenc, vulkan or software
-* 8 + 10 bit SDR \& 10 bit HDR images suppored as export
-* image enhancement, chromatic aberration and logo effects
+* supported input formats
+  * .png
+  * .tif
+* supported output formats
+  * .avif
+    * bit Depths: 8 bit SDR, 8 + 10 bit HDR
+    * encoders: NVENC, Vulkan & Software
+  * .jpeg xl
+    * bit Depths: 8 bit SDR, 8 + 10 bit HDR
+    * encoder: Software
+  * jpeg
+    * bit Depths: 8 bit SDR
+    * encoder: Software
+* effects
+  * chromatic aberration
+  * image enhancement (debanding)
+  * hdr:
+    * brightness curve
+    * saturation
+  * logo overlay
 * saveable settings
 
 # Third Party Libraries
