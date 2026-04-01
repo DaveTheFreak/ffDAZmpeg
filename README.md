@@ -15,7 +15,7 @@ It can save 8 or 10 bit images, either SDR Rec709 or HDR PQ.
     * bit Depths: 8 bit SDR, 8 + 10 bit HDR
     * encoders: NVENC, Vulkan & Software
   * JPEG XL (.jxl)
-    * bit Depths: 8 bit SDR, 8 + 10 bit HDR
+    * bit Depths: 8 bit SDR, 10 bit HDR
     * encoder: Software
   * JPEG (.jpg)
     * bit Depths: 8 bit SDR
